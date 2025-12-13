@@ -155,3 +155,88 @@ else:
             c3.error(f"€ {dif:,.2f}  ({pct:.1f} %)")
     else:
         c3.warning("No se puede calcular variación.")
+        st.divider()
+st.subheader("Comparable diario · Mismo día de la semana (año anterior)")
+
+if df.empty:
+    st.info("No hay datos suficientes para comparaciones.")
+else:
+    fecha_base = df["fecha"].max().date()
+
+    fecha_sel = st.date_input(
+        "Selecciona el día a analizar (DOW)",
+        value=fecha_base,
+        key="fecha_dow"
+    )
+
+    fecha_actual = pd.to_datetime(fecha_sel)
+    dow_actual = fecha_actual.weekday()  # lunes=0
+
+    # Día actual
+    actual = df[df["fecha"] == fecha_actual]
+
+    # Buscar mismo DOW en año anterior
+    año_anterior = fecha_actual.year - 1
+    candidatos = df[
+        (df["fecha"].dt.year == año_anterior) &
+        (df["fecha"].dt.weekday == dow_actual)
+    ].copy()
+
+    if not candidatos.empty:
+        # Elegir el más cercano en fecha
+        candidatos["dist"] = (candidatos["fecha"] - fecha_actual).abs()
+        comparable = candidatos.sort_values("dist").iloc[0]
+    else:
+        comparable = None
+
+    c1, c2, c3 = st.columns(3)
+
+    # -------------------------
+    # DÍA ACTUAL
+    # -------------------------
+    with c1:
+        st.markdown("**Día actual**")
+        if actual.empty:
+            st.warning("No hay datos para este día.")
+        else:
+            r = actual.iloc[0]
+            st.write(f"Fecha: {fecha_actual.date()}")
+            st.write(f"Mañana: {r['ventas_manana_eur']:.2f} €")
+            st.write(f"Tarde: {r['ventas_tarde_eur']:.2f} €")
+            st.write(f"Noche: {r['ventas_noche_eur']:.2f} €")
+            st.write(f"**Total: {r['ventas_total_eur']:.2f} €**")
+
+    # -------------------------
+    # AÑO ANTERIOR (MISMO DOW)
+    # -------------------------
+    with c2:
+        st.markdown("**Mismo DOW · Año anterior**")
+        if comparable is None:
+            st.warning("No existe día comparable.")
+        else:
+            st.write(f"Fecha: {comparable['fecha'].date()}")
+            st.write(f"Mañana: {comparable['ventas_manana_eur']:.2f} €")
+            st.write(f"Tarde: {comparable['ventas_tarde_eur']:.2f} €")
+            st.write(f"Noche: {comparable['ventas_noche_eur']:.2f} €")
+            st.write(f"**Total: {comparable['ventas_total_eur']:.2f} €**")
+
+    # -------------------------
+    # VARIACIÓN
+    # -------------------------
+    with c3:
+        st.markdown("**Variación**")
+        if actual.empty or comparable is None:
+            st.info("No se puede calcular variación.")
+        else:
+            dif = r["ventas_total_eur"] - comparable["ventas_total_eur"]
+            pct = (dif / comparable["ventas_total_eur"] * 100) if comparable["ventas_total_eur"] > 0 else 0
+
+            st.metric("Total", f"{dif:+.2f} €", f"{pct:+.1f} %")
+
+            for franja in ["manana", "tarde", "noche"]:
+                act = r[f"ventas_{franja}_eur"]
+                prev = comparable[f"ventas_{franja}_eur"]
+                d = act - prev
+                p = (d / prev * 100) if prev > 0 else 0
+                st.write(f"{franja.capitalize()}: {d:+.2f} € ({p:+.1f} %)")
+
