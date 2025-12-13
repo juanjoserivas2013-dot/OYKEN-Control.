@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import date
 
 # =========================
-# CONFIGURACIÓN GENERAL
+# CONFIGURACIÓN
 # =========================
 st.set_page_config(page_title="OYKEN · Ventas", layout="centered")
 st.title("OYKEN · Ventas")
@@ -26,7 +26,7 @@ else:
     ])
 
 # =========================
-# REGISTRO DIARIO (ALTA)
+# REGISTRO DIARIO
 # =========================
 st.subheader("Registro diario")
 
@@ -34,22 +34,21 @@ with st.form("form_ventas"):
     fecha = st.date_input(
         "Fecha",
         value=date.today(),
-        min_value=date(2015, 1, 1),   # 🔓 DESBLOQUEO DE AÑOS
+        min_value=date(2015, 1, 1),
         max_value=date.today()
     )
 
-    st.caption("Desglose por franja (opcional)")
-    col1, col2, col3 = st.columns(3)
-    with col1:
+    st.caption("Desglose por franja")
+    c1, c2, c3 = st.columns(3)
+    with c1:
         vm = st.number_input("Mañana (€)", min_value=0.0, step=10.0, format="%.2f")
-    with col2:
+    with c2:
         vt = st.number_input("Tarde (€)", min_value=0.0, step=10.0, format="%.2f")
-    with col3:
+    with c3:
         vn = st.number_input("Noche (€)", min_value=0.0, step=10.0, format="%.2f")
 
-    st.caption("El total se calcula automáticamente")
-    ventas_total = vm + vt + vn
-    st.metric("Total del día (€)", f"{ventas_total:,.2f}")
+    total = vm + vt + vn
+    st.metric("Total del día (€)", f"{total:,.2f}")
 
     guardar = st.form_submit_button("Guardar")
 
@@ -59,7 +58,7 @@ if guardar:
         "ventas_manana_eur": vm,
         "ventas_tarde_eur": vt,
         "ventas_noche_eur": vn,
-        "ventas_total_eur": ventas_total
+        "ventas_total_eur": total
     }])
 
     df = pd.concat([df, nueva], ignore_index=True)
@@ -76,50 +75,83 @@ st.divider()
 # =========================
 st.subheader("Vista mensual")
 
-if df.empty:
-    st.info("Aún no hay datos.")
-else:
+if not df.empty:
     df["año"] = df["fecha"].dt.year
     df["mes"] = df["fecha"].dt.month
     df["dia"] = df["fecha"].dt.day
     df["dow"] = df["fecha"].dt.day_name()
 
-    col1, col2 = st.columns(2)
-    with col1:
-        años = sorted(df["año"].unique())
-        año_sel = st.selectbox("Año", años, index=len(años) - 1)
-    with col2:
+    c1, c2 = st.columns(2)
+    with c1:
+        año_sel = st.selectbox("Año", sorted(df["año"].unique()))
+    with c2:
         mes_sel = st.selectbox(
             "Mes",
             list(range(1, 13)),
             format_func=lambda m: [
-                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
             ][m - 1]
         )
 
-    mensual = (
-        df[(df["año"] == año_sel) & (df["mes"] == mes_sel)]
-        .sort_values("fecha")
-        [["fecha", "dia", "dow",
-          "ventas_manana_eur", "ventas_tarde_eur",
-          "ventas_noche_eur", "ventas_total_eur"]]
+    mensual = df[(df["año"] == año_sel) & (df["mes"] == mes_sel)]
+
+    st.dataframe(
+        mensual[[
+            "fecha","dia","dow",
+            "ventas_manana_eur",
+            "ventas_tarde_eur",
+            "ventas_noche_eur",
+            "ventas_total_eur"
+        ]],
+        hide_index=True,
+        use_container_width=True
     )
 
-    st.dataframe(mensual, use_container_width=True, hide_index=True)
+    st.divider()
 
-    # =========================
-    # TOTALES
-    # =========================
-    tot_m = mensual["ventas_manana_eur"].sum()
-    tot_t = mensual["ventas_tarde_eur"].sum()
-    tot_n = mensual["ventas_noche_eur"].sum()
-    tot_mes = mensual["ventas_total_eur"].sum()
-    prom = mensual["ventas_total_eur"].mean() if not mensual.empty else 0
+# =========================
+# COMPARABLE INTERANUAL
+# =========================
+st.subheader("Comparable diario · Mismo día año anterior")
 
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Total mes (€)", f"{tot_mes:,.2f}")
-    c2.metric("Promedio diario (€)", f"{prom:,.2f}")
-    c3.metric("Mañana (€)", f"{tot_m:,.2f}")
-    c4.metric("Tarde (€)", f"{tot_t:,.2f}")
-    c5.metric("Noche (€)", f"{tot_n:,.2f}")
+if df.empty:
+    st.info("No hay datos suficientes para comparar.")
+else:
+    dia_sel = st.date_input(
+        "Selecciona el día a analizar",
+        value=df["fecha"].max(),
+        min_value=df["fecha"].min(),
+        max_value=df["fecha"].max(),
+        key="comp_day"
+    )
+
+    actual = df[df["fecha"] == pd.to_datetime(dia_sel)]
+    anterior = df[df["fecha"] == pd.to_datetime(
+        date(dia_sel.year - 1, dia_sel.month, dia_sel.day)
+    )]
+
+    c1, c2, c3 = st.columns(3)
+
+    if actual.empty:
+        c1.warning("No hay datos para este día.")
+    else:
+        venta_actual = actual.iloc[0]["ventas_total_eur"]
+        c1.success(f"Día actual\n€ {venta_actual:,.2f}")
+
+    if anterior.empty:
+        c2.warning("No existe histórico comparable.")
+    else:
+        venta_ant = anterior.iloc[0]["ventas_total_eur"]
+        c2.info(f"Año anterior\n€ {venta_ant:,.2f}")
+
+    if not actual.empty and not anterior.empty:
+        dif = venta_actual - venta_ant
+        pct = (dif / venta_ant) * 100 if venta_ant != 0 else 0
+
+        if dif >= 0:
+            c3.success(f"+€ {dif:,.2f}  ({pct:.1f} %)")
+        else:
+            c3.error(f"€ {dif:,.2f}  ({pct:.1f} %)")
+    else:
+        c3.warning("No se puede calcular variación.")
