@@ -4,11 +4,10 @@ from pathlib import Path
 from datetime import date
 
 # =========================
-# CONFIGURACIÓN GENERAL
+# CONFIGURACIÓN
 # =========================
 st.set_page_config(page_title="OYKEN · Ventas", layout="centered")
 st.title("OYKEN · Ventas")
-st.caption("Control operativo diario · Lectura inmediata")
 
 DATA_FILE = Path("ventas.csv")
 
@@ -33,28 +32,25 @@ st.subheader("Registro diario")
 
 with st.form("form_ventas"):
     fecha = st.date_input(
-        "Fecha (dd/mm/aaaa)",
+        "Fecha",
         value=date.today(),
-        min_value=date(2015, 1, 1),
-        max_value=date.today(),
         format="DD/MM/YYYY"
     )
 
-    st.caption("Ventas por turno (€)")
+    st.caption("Desglose por franja")
     c1, c2, c3 = st.columns(3)
     with c1:
-        vm = st.number_input("Mañana", min_value=0.0, step=10.0, format="%.2f")
+        vm = st.number_input("Mañana (€)", min_value=0.0, step=10.0, format="%.2f")
     with c2:
-        vt = st.number_input("Tarde", min_value=0.0, step=10.0, format="%.2f")
+        vt = st.number_input("Tarde (€)", min_value=0.0, step=10.0, format="%.2f")
     with c3:
-        vn = st.number_input("Noche", min_value=0.0, step=10.0, format="%.2f")
+        vn = st.number_input("Noche (€)", min_value=0.0, step=10.0, format="%.2f")
 
-    total = vm + vt + vn
-    st.metric("Total del día (€)", f"{total:,.2f}")
-
-    guardar = st.form_submit_button("Guardar")
+    guardar = st.form_submit_button("Guardar venta")
 
 if guardar:
+    total = vm + vt + vn
+
     nueva = pd.DataFrame([{
         "fecha": pd.to_datetime(fecha),
         "ventas_manana_eur": vm,
@@ -65,152 +61,105 @@ if guardar:
 
     df = pd.concat([df, nueva], ignore_index=True)
     df = df.drop_duplicates(subset=["fecha"], keep="last")
-    df = df.sort_values("fecha")
     df.to_csv(DATA_FILE, index=False)
 
-    st.success(f"Venta guardada ({fecha.strftime('%d/%m/%Y')})")
-    st.rerun()
+    st.success("Venta guardada correctamente")
 
 st.divider()
 
 # =========================
-# LISTADO DE VENTAS
+# VISTA MENSUAL
 # =========================
-st.subheader("Listado de ventas")
+st.subheader("Vista mensual")
 
 if df.empty:
-    st.info("Aún no hay ventas registradas.")
+    st.info("No hay datos todavía.")
 else:
-    df_listado = df.sort_values("fecha", ascending=False).copy()
-    df_listado["Fecha"] = df_listado["fecha"].dt.strftime("%d/%m/%Y")
-    df_listado["Día"] = df_listado["fecha"].dt.day_name()
+    df["año"] = df["fecha"].dt.year
+    df["mes"] = df["fecha"].dt.month
+    df["dia"] = df["fecha"].dt.day
+    df["dow"] = df["fecha"].dt.day_name(locale="es_ES")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        años = sorted(df["año"].unique())
+        año_sel = st.selectbox("Año", años, index=len(años) - 1)
+    with c2:
+        mes_sel = st.selectbox(
+            "Mes",
+            list(range(1, 13)),
+            format_func=lambda m: [
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            ][m - 1]
+        )
+
+    mensual = (
+        df[(df["año"] == año_sel) & (df["mes"] == mes_sel)]
+        .sort_values("fecha")
+    )
 
     st.dataframe(
-        df_listado[[
-            "Fecha",
-            "Día",
+        mensual[[
+            "fecha",
+            "dia",
+            "dow",
             "ventas_manana_eur",
             "ventas_tarde_eur",
             "ventas_noche_eur",
             "ventas_total_eur"
-        ]].rename(columns={
-            "ventas_manana_eur": "Mañana (€)",
-            "ventas_tarde_eur": "Tarde (€)",
-            "ventas_noche_eur": "Noche (€)",
-            "ventas_total_eur": "Total (€)"
-        }),
+        ]],
         use_container_width=True,
         hide_index=True
     )
 
-st.divider()
+    st.divider()
 
-# =========================
-# RESUMEN MENSUAL (AUTOMÁTICO)
-# =========================
-st.subheader("Resumen mensual · Acumulado vs mes anterior")
+    # =========================
+    # RESUMEN MENSUAL · ACUMULADO VS MES ANTERIOR
+    # =========================
+    st.subheader("Resumen mensual · Acumulado vs mes anterior")
 
-if not df.empty:
-    fecha_ref = df["fecha"].max()
-    mes_actual = fecha_ref.month
-    año_actual = fecha_ref.year
-
-    if mes_actual == 1:
-        mes_anterior = 12
-        año_anterior = año_actual - 1
-    else:
-        mes_anterior = mes_actual - 1
-        año_anterior = año_actual
-
-    df_mes_actual = df[
-        (df["fecha"].dt.year == año_actual) &
-        (df["fecha"].dt.month == mes_actual)
-    ]
-
-    df_mes_anterior = df[
-        (df["fecha"].dt.year == año_anterior) &
-        (df["fecha"].dt.month == mes_anterior)
-    ]
-
-    total_actual = df_mes_actual["ventas_total_eur"].sum()
-    dias_actual = df_mes_actual["fecha"].nunique()
+    # Mes actual
+    total_actual = mensual["ventas_total_eur"].sum()
+    dias_actual = mensual[mensual["ventas_total_eur"] > 0].shape[0]
     prom_actual = total_actual / dias_actual if dias_actual > 0 else 0
 
-    total_anterior = df_mes_anterior["ventas_total_eur"].sum()
-    dias_anterior = df_mes_anterior["fecha"].nunique()
-    prom_anterior = total_anterior / dias_anterior if dias_anterior > 0 else 0
-
-    dif_eur = total_actual - total_anterior
-    dif_pct = (dif_eur / total_anterior * 100) if total_anterior > 0 else 0
-
-    meses = [
-        "Enero","Febrero","Marzo","Abril","Mayo","Junio",
-        "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
-    ]
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.markdown(f"**Mes actual · {meses[mes_actual-1]} {año_actual}**")
-        st.write(f"Total acumulado: **{total_actual:,.2f} €**")
-        st.write(f"Días con venta: {dias_actual}")
-        st.write(f"Promedio diario: {prom_actual:,.2f} €")
-
-    with c2:
-        st.markdown(f"**Mes anterior · {meses[mes_anterior-1]} {año_anterior}**")
-        st.write(f"Total mes: **{total_anterior:,.2f} €**")
-        st.write(f"Días con venta: {dias_anterior}")
-        st.write(f"Promedio diario: {prom_anterior:,.2f} €")
-
-    with c3:
-        st.markdown("**Diferencia**")
-        st.metric("€ vs mes anterior", f"{dif_eur:+,.2f} €", f"{dif_pct:+.1f} %")
-
-st.divider()
-
-# =========================
-# COMPARABLE AUTOMÁTICO POR DOW
-# =========================
-st.subheader("Lectura automática · Comparativa por día de la semana")
-
-if not df.empty:
-    fecha_actual = df["fecha"].max()
-    dow_actual = fecha_actual.weekday()
-
-    actual = df[df["fecha"] == fecha_actual].iloc[0]
-    fecha_objetivo = fecha_actual.replace(year=fecha_actual.year - 1)
-
-    candidatos = df[
-        (df["fecha"].dt.year == fecha_objetivo.year) &
-        (df["fecha"].dt.weekday == dow_actual)
-    ].copy()
-
-    if not candidatos.empty:
-        candidatos["dist"] = (candidatos["fecha"] - fecha_objetivo).abs()
-        comparable = candidatos.sort_values("dist").iloc[0]
+    # Mes anterior
+    if mes_sel == 1:
+        mes_ant = 12
+        año_ant = año_sel - 1
     else:
-        comparable = None
+        mes_ant = mes_sel - 1
+        año_ant = año_sel
+
+    anterior = df[(df["año"] == año_ant) & (df["mes"] == mes_ant)]
+    total_ant = anterior["ventas_total_eur"].sum()
+    dias_ant = anterior[anterior["ventas_total_eur"] > 0].shape[0]
+    prom_ant = total_ant / dias_ant if dias_ant > 0 else 0
+
+    # Diferencias
+    diff_eur = total_actual - total_ant
+    diff_dias = dias_actual - dias_ant
+    diff_pct = ((total_actual / total_ant) - 1) * 100 if total_ant > 0 else 0
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.markdown("**Día actual**")
-        st.write(f"Fecha: {fecha_actual.strftime('%d/%m/%Y')}")
-        st.write(f"Total: {actual['ventas_total_eur']:.2f} €")
+        st.markdown(f"**Mes actual · {mensual.iloc[0]['fecha'].strftime('%B %Y')}**")
+        st.metric("Total acumulado (€)", f"{total_actual:,.2f}")
+        st.metric("Días con venta", dias_actual)
+        st.metric("Promedio diario (€)", f"{prom_actual:,.2f}")
 
     with c2:
-        st.markdown("**Mismo DOW · Año anterior**")
-        if comparable is None:
-            st.warning("No existe histórico comparable.")
-        else:
-            st.write(f"Fecha: {comparable['fecha'].strftime('%d/%m/%Y')}")
-            st.write(f"Total: {comparable['ventas_total_eur']:.2f} €")
+        st.markdown(f"**Mes anterior · {año_ant}/{mes_ant:02d}**")
+        st.metric("Total mes (€)", f"{total_ant:,.2f}")
+        st.metric("Días con venta", dias_ant)
+        st.metric("Promedio diario (€)", f"{prom_ant:,.2f}")
 
     with c3:
-        st.markdown("**Variación**")
-        if comparable is None:
-            st.info("Sin base histórica suficiente.")
-        else:
-            dif = actual["ventas_total_eur"] - comparable["ventas_total_eur"]
-            pct = (dif / comparable["ventas_total_eur"] * 100) if comparable["ventas_total_eur"] > 0 else 0
-            st.metric("Total", f"{dif:+.2f} €", f"{pct:+.1f} %")
+        st.markdown("**Diferencia vs mes anterior**")
+        st.metric("€ vs mes anterior", f"{diff_eur:+,.2f}")
+        st.metric("Diferencia días", f"{diff_dias:+d}")
+        st.metric("% variación", f"{diff_pct:+.1f}%")
+
