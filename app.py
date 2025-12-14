@@ -193,6 +193,9 @@ with c3:
 # =========================
 # BLOQUE 2 — RESUMEN MENSUAL AUTOMÁTICO
 # =========================
+# =========================
+# BLOQUE 2 — RESUMEN MENSUAL AUTOMÁTICO (COLORES OYKEN)
+# =========================
 st.divider()
 st.subheader("Resumen mensual automático")
 
@@ -205,6 +208,7 @@ total_mes = df_mes["ventas_total_eur"].sum()
 dias_mes = df_mes["ventas_total_eur"].gt(0).sum()
 prom_mes = total_mes / dias_mes if dias_mes else 0
 
+# --- Mes anterior ---
 if mes_actual == 1:
     mes_ant = 12
     año_ant = año_actual - 1
@@ -218,9 +222,18 @@ total_ant = df_ant["ventas_total_eur"].sum()
 dias_ant = df_ant["ventas_total_eur"].gt(0).sum()
 prom_ant = total_ant / dias_ant if dias_ant else 0
 
+# --- Diferencias ---
 dif_total = total_mes - total_ant
 dif_dias = dias_mes - dias_ant
 dif_pct = ((prom_mes / prom_ant) - 1) * 100 if prom_ant > 0 else 0
+
+# --- Función color ---
+def color_from_value(v):
+    if v > 0:
+        return "green"
+    if v < 0:
+        return "red"
+    return "gray"
 
 c1, c2, c3 = st.columns(3)
 
@@ -238,9 +251,27 @@ with c2:
 
 with c3:
     st.markdown(f"**Diferencia · {MESES_ES[mes_actual-1]} vs {MESES_ES[mes_ant-1]}**")
-    st.metric("€ vs mes anterior", f"{dif_total:+,.2f}")
-    st.metric("Δ días", f"{dif_dias:+d}")
-    st.metric("Δ promedio", f"{dif_pct:+.1f} %")
+
+    st.markdown(
+        f"€ vs mes anterior: "
+        f"<span style='color:{color_from_value(dif_total)}'>"
+        f"{dif_total:+,.2f} €</span>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        f"Δ días de venta: "
+        f"<span style='color:{color_from_value(dif_dias)}'>"
+        f"{dif_dias:+d}</span>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        f"Δ promedio diario: "
+        f"<span style='color:{color_from_value(dif_pct)}'>"
+        f"{dif_pct:+.1f} %</span>",
+        unsafe_allow_html=True
+    )
 
 # =========================
 # BLOQUE 3 — BITÁCORA DEL MES
