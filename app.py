@@ -90,24 +90,40 @@ df["año"] = df["fecha"].dt.year
 # =========================
 # BLOQUE 1 — HOY
 # =========================
+# =========================
+# BLOQUE 1 — HOY (CALENDARIO REAL)
+# =========================
 st.divider()
 st.subheader("HOY")
 
-hoy = df.iloc[-1]
-fecha_hoy = hoy["fecha"]
-dow_hoy = hoy["dow"]
+fecha_hoy = pd.to_datetime(date.today())
+dow_hoy = DOW_ES[fecha_hoy.weekday()]
+
+venta_hoy = df[df["fecha"] == fecha_hoy]
+
+if venta_hoy.empty:
+    vm = vt = vn = total_hoy = 0.0
+else:
+    fila = venta_hoy.iloc[0]
+    vm = fila["ventas_manana_eur"]
+    vt = fila["ventas_tarde_eur"]
+    vn = fila["ventas_noche_eur"]
+    total_hoy = fila["ventas_total_eur"]
 
 c1, c2 = st.columns([2, 1])
 
 with c1:
     st.markdown(f"**{dow_hoy} · {fecha_hoy.strftime('%d/%m/%Y')}**")
-    st.write(f"Mañana: {hoy['ventas_manana_eur']:.2f} €")
-    st.write(f"Tarde: {hoy['ventas_tarde_eur']:.2f} €")
-    st.write(f"Noche: {hoy['ventas_noche_eur']:.2f} €")
-    st.markdown(f"### TOTAL HOY: {hoy['ventas_total_eur']:.2f} €")
+    st.write(f"Mañana: {vm:.2f} €")
+    st.write(f"Tarde: {vt:.2f} €")
+    st.write(f"Noche: {vn:.2f} €")
+    st.markdown(f"### TOTAL HOY: {total_hoy:.2f} €")
 
-# Comparable DOW año anterior
+# =========================
+# COMPARATIVA HISTÓRICA DOW
+# =========================
 fecha_obj = fecha_hoy.replace(year=fecha_hoy.year - 1)
+
 candidatos = df[
     (df["año"] == fecha_obj.year) &
     (df["fecha"].dt.weekday == fecha_hoy.weekday())
@@ -118,10 +134,11 @@ with c2:
     if candidatos.empty:
         st.info("Sin histórico comparable")
     else:
+        candidatos = candidatos.copy()
         candidatos["dist"] = (candidatos["fecha"] - fecha_obj).abs()
         comp = candidatos.sort_values("dist").iloc[0]
 
-        dif = hoy["ventas_total_eur"] - comp["ventas_total_eur"]
+        dif = total_hoy - comp["ventas_total_eur"]
         pct = (dif / comp["ventas_total_eur"] * 100) if comp["ventas_total_eur"] > 0 else 0
 
         st.write(f"{comp['dow']} {comp['fecha'].strftime('%d/%m/%Y')}")
