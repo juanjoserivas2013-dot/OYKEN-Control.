@@ -226,57 +226,74 @@ def iconos(turno):
         icons += " ⚠"
     return icons
 
+
 # =========================
-# DISPOSICIÓN VISUAL
+# DISPOSICIÓN VISUAL 
 # =========================
 c1, c2, c3 = st.columns(3)
 
-# --- HOY ---
+# --- COLUMNA HOY ---
 with c1:
     st.markdown("**HOY**")
     st.caption(f"{dow_hoy} · {fecha_hoy.strftime('%d/%m/%Y')}")
+
     st.write("**Mañana**")
     st.write(f"{vm_h:,.2f} €")
+
     st.write("**Tarde**")
     st.write(f"{vt_h:,.2f} €")
+
     st.write("**Noche**")
     st.write(f"{vn_h:,.2f} €")
+
     st.markdown("---")
     st.markdown(f"### TOTAL HOY\n{total_h:,.2f} €")
 
-# --- DOW ---
+
+# --- COLUMNA DOW ---
 with c2:
     st.markdown("**DOW (Año anterior)**")
     st.caption(fecha_a_txt)
+
     st.write("**Mañana**")
     st.write(f"{vm_a:,.2f} €")
+
     st.write("**Tarde**")
     st.write(f"{vt_a:,.2f} €")
+
     st.write("**Noche**")
     st.write(f"{vn_a:,.2f} €")
+
     st.markdown("---")
     st.markdown(f"### TOTAL DOW\n{total_a:,.2f} €")
 
-# --- VARIACIÓN ---
+
+# --- COLUMNA VARIACIÓN ---
 with c3:
     st.markdown("**VARIACIÓN**")
     st.caption("Vs. DOW año anterior")
 
     st.markdown(
-        f"**Mañana{iconos('mañana')}**  "
-        f"<span style='color:{color(d_vm)}'>{d_vm:+,.2f} € ({p_vm:+.1f}%)</span>",
+        f"**Mañana**  "
+        f"<span style='color:{color(d_vm)}'>"
+        f"{d_vm:+,.2f} € ({p_vm:+.1f}%) {iconos('mañana')}"
+        f"</span>",
         unsafe_allow_html=True
     )
 
     st.markdown(
-        f"**Tarde{iconos('tarde')}**  "
-        f"<span style='color:{color(d_vt)}'>{d_vt:+,.2f} € ({p_vt:+.1f}%)</span>",
+        f"**Tarde**  "
+        f"<span style='color:{color(d_vt)}'>"
+        f"{d_vt:+,.2f} € ({p_vt:+.1f}%) {iconos('tarde')}"
+        f"</span>",
         unsafe_allow_html=True
     )
 
     st.markdown(
-        f"**Noche{iconos('noche')}**  "
-        f"<span style='color:{color(d_vn)}'>{d_vn:+,.2f} € ({p_vn:+.1f}%)</span>",
+        f"**Noche**  "
+        f"<span style='color:{color(d_vn)}'>"
+        f"{d_vn:+,.2f} € ({p_vn:+.1f}%) {iconos('noche')}"
+        f"</span>",
         unsafe_allow_html=True
     )
 
@@ -284,7 +301,9 @@ with c3:
 
     st.markdown(
         f"### TOTAL  "
-        f"<span style='color:{color(d_tot)}'>{d_tot:+,.2f} € ({p_tot:+.1f}%)</span>",
+        f"<span style='color:{color(d_tot)}'>"
+        f"{d_tot:+,.2f} € ({p_tot:+.1f}%)"
+        f"</span>",
         unsafe_allow_html=True
     )
 
