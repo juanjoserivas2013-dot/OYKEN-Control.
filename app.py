@@ -283,4 +283,4 @@ st.dataframe(
     ]].rename(columns={"fecha_display": "fecha"}),
     hide_index=True,
     use_container_width=True
-)
+    )
