@@ -60,22 +60,38 @@ st.subheader("Registro diario")
 
 with st.form("form_ventas", clear_on_submit=True):
 
-    fecha = st.date_input("Fecha", value=date.today(), format="DD/MM/YYYY")
+    fecha = st.date_input(
+        "Fecha",
+        value=date.today(),
+        format="DD/MM/YYYY"
+    )
 
-    st.markdown("### Mañana")
-    vm = st.number_input("Ventas mañana (€)", min_value=0.0, step=10.0)
-    cm = st.number_input("Comensales mañana", min_value=0, step=1)
-    tm = st.number_input("Tickets mañana", min_value=0, step=1)
+    st.markdown("### 🕘 Mañana")
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        vm = st.number_input("Ventas (€)", min_value=0.0, step=10.0, key="vm")
+    with m2:
+        cm = st.number_input("Comensales", min_value=0, step=1, key="cm")
+    with m3:
+        tm = st.number_input("Tickets", min_value=0, step=1, key="tm")
 
-    st.markdown("### Tarde")
-    vt = st.number_input("Ventas tarde (€)", min_value=0.0, step=10.0)
-    ct = st.number_input("Comensales tarde", min_value=0, step=1)
-    tt = st.number_input("Tickets tarde", min_value=0, step=1)
+    st.markdown("### 🕒 Tarde")
+    t1, t2, t3 = st.columns(3)
+    with t1:
+        vt = st.number_input("Ventas (€)", min_value=0.0, step=10.0, key="vt")
+    with t2:
+        ct = st.number_input("Comensales", min_value=0, step=1, key="ct")
+    with t3:
+        tt = st.number_input("Tickets", min_value=0, step=1, key="tt")
 
-    st.markdown("### Noche")
-    vn = st.number_input("Ventas noche (€)", min_value=0.0, step=10.0)
-    cn = st.number_input("Comensales noche", min_value=0, step=1)
-    tn = st.number_input("Tickets noche", min_value=0, step=1)
+    st.markdown("### 🌙 Noche")
+    n1, n2, n3 = st.columns(3)
+    with n1:
+        vn = st.number_input("Ventas (€)", min_value=0.0, step=10.0, key="vn")
+    with n2:
+        cn = st.number_input("Comensales", min_value=0, step=1, key="cn")
+    with n3:
+        tn = st.number_input("Tickets", min_value=0, step=1, key="tn")
 
     observaciones = st.text_area(
         "Observaciones del día",
