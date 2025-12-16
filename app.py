@@ -222,15 +222,19 @@ c1, c2, c3 = st.columns(3)
 with c1:
     st.markdown("**HOY**")
     st.caption(f"{DOW_ES[fecha_hoy.weekday()]} · {fecha_hoy.strftime('%d/%m/%Y')}")
+
     st.write("**Mañana**")
     st.write(f"{vm_h:,.2f} €")
     st.caption(f"{cm_h} comensales · {tm_h} tickets")
+
     st.write("**Tarde**")
     st.write(f"{vt_h:,.2f} €")
     st.caption(f"{ct_h} comensales · {tt_h} tickets")
+
     st.write("**Noche**")
     st.write(f"{vn_h:,.2f} €")
     st.caption(f"{cn_h} comensales · {tn_h} tickets")
+
     st.markdown("---")
     st.markdown(f"### TOTAL HOY\n{total_h:,.2f} €")
 
@@ -238,35 +242,53 @@ with c1:
 with c2:
     st.markdown("**DOW (Año anterior)**")
     st.caption(fecha_dow_txt)
+
     st.write("**Mañana**")
     st.write(f"{vm_a:,.2f} €")
     st.caption(f"{cm_a} comensales · {tm_a} tickets")
+
     st.write("**Tarde**")
     st.write(f"{vt_a:,.2f} €")
     st.caption(f"{ct_a} comensales · {tt_a} tickets")
+
     st.write("**Noche**")
     st.write(f"{vn_a:,.2f} €")
     st.caption(f"{cn_a} comensales · {tn_a} tickets")
+
     st.markdown("---")
     st.markdown(f"### TOTAL DOW\n{total_a:,.2f} €")
 
-# VARIACIÓN
+# VARIACIÓN (ÚNICO CAMBIO APLICADO AQUÍ)
 with c3:
     st.markdown("**VARIACIÓN**")
     st.caption("Vs. DOW año anterior")
 
-    for label, d, p in [
-        ("Mañana", d_vm, p_vm),
-        ("Tarde", d_vt, p_vt),
-        ("Noche", d_vn, p_vn),
-    ]:
-        st.markdown(
-            f"**{label}** "
-            f"<span style='color:{color(d)}'>"
-            f"{d:+,.2f} € ({p:+.1f}%) {icono(p)}"
-            f"</span>",
-            unsafe_allow_html=True
-        )
+    st.markdown(
+        f"**Mañana** "
+        f"<span style='color:{color(d_vm)}'>"
+        f"{d_vm:+,.2f} € ({p_vm:+.1f}%) {icono(p_vm)}"
+        f"</span>",
+        unsafe_allow_html=True
+    )
+    st.caption(f"{cm_h} comensales · {tm_h} tickets")
+
+    st.markdown(
+        f"**Tarde** "
+        f"<span style='color:{color(d_vt)}'>"
+        f"{d_vt:+,.2f} € ({p_vt:+.1f}%) {icono(p_vt)}"
+        f"</span>",
+        unsafe_allow_html=True
+    )
+    st.caption(f"{ct_h} comensales · {tt_h} tickets")
+
+    st.markdown(
+        f"**Noche** "
+        f"<span style='color:{color(d_vn)}'>"
+        f"{d_vn:+,.2f} € ({p_vn:+.1f}%) {icono(p_vn)}"
+        f"</span>",
+        unsafe_allow_html=True
+    )
+    st.caption(f"{cn_h} comensales · {tn_h} tickets")
 
     st.markdown("---")
     st.markdown(
