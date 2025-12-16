@@ -255,20 +255,57 @@ with c3:
     st.markdown("**VARIACIÓN**")
     st.caption("Vs. DOW año anterior")
 
-    for label, d, p in [
-        ("Mañana", d_vm, p_vm),
-        ("Tarde", d_vt, p_vt),
-        ("Noche", d_vn, p_vn),
-    ]:
-        st.markdown(
-            f"**{label}** "
-            f"<span style='color:{color(d)}'>"
-            f"{d:+,.2f} € ({p:+.1f}%) {icono(p)}"
-            f"</span>",
-            unsafe_allow_html=True
-        )
+    # MAÑANA
+    st.markdown(
+        f"**Mañana**  "
+        f"<span style='color:{color(d_vm)}'>"
+        f"{d_vm:+,.2f} € ({p_vm:+.1f}%) {icono_variacion(p_vm)}"
+        f"</span>",
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        f"<small style='color:gray'>"
+        f"Comensales: {cm_h - cm_a:+d} ({((cm_h - cm_a)/cm_a*100):+.1f}% if cm_a > 0 else 0) · "
+        f"Tickets: {tm_h - tm_a:+d} ({((tm_h - tm_a)/tm_a*100):+.1f}% if tm_a > 0 else 0)"
+        f"</small>",
+        unsafe_allow_html=True
+    )
+
+    # TARDE
+    st.markdown(
+        f"**Tarde**  "
+        f"<span style='color:{color(d_vt)}'>"
+        f"{d_vt:+,.2f} € ({p_vt:+.1f}%) {icono_variacion(p_vt)}"
+        f"</span>",
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        f"<small style='color:gray'>"
+        f"Comensales: {ct_h - ct_a:+d} ({((ct_h - ct_a)/ct_a*100):+.1f}% if ct_a > 0 else 0) · "
+        f"Tickets: {tt_h - tt_a:+d} ({((tt_h - tt_a)/tt_a*100):+.1f}% if tt_a > 0 else 0)"
+        f"</small>",
+        unsafe_allow_html=True
+    )
+
+    # NOCHE
+    st.markdown(
+        f"**Noche**  "
+        f"<span style='color:{color(d_vn)}'>"
+        f"{d_vn:+,.2f} € ({p_vn:+.1f}%) {icono_variacion(p_vn)}"
+        f"</span>",
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        f"<small style='color:gray'>"
+        f"Comensales: {cn_h - cn_a:+d} ({((cn_h - cn_a)/cn_a*100):+.1f}% if cn_a > 0 else 0) · "
+        f"Tickets: {tn_h - tn_a:+d} ({((tn_h - tn_a)/tn_a*100):+.1f}% if tn_a > 0 else 0)"
+        f"</small>",
+        unsafe_allow_html=True
+    )
 
     st.markdown("---")
+
+    # TOTAL (solo ventas, como acordado)
     st.markdown(
         f"### TOTAL "
         f"<span style='color:{color(d_tot)}'>"
