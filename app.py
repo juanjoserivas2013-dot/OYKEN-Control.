@@ -248,33 +248,3 @@ with c3:
         unsafe_allow_html=True
     )
     st.caption(f"Ticket medio: {fmt_var(d_tmed_tot)} € ({fmt_pct(p_tmed_tot)}) {icono(p_tmed_tot)}")
-
-# =========================
-# BITÁCORA DEL MES
-# =========================
-st.divider()
-st.subheader("Ventas del mes (bitácora viva)")
-
-df_mes = df[
-    (df["fecha"].dt.month == fecha_hoy.month) &
-    (df["fecha"].dt.year == fecha_hoy.year)
-].copy()
-
-df_mes["fecha_display"] = df_mes["fecha"].dt.strftime("%d-%m-%Y")
-df_mes["fecha_display"] = df_mes.apply(
-    lambda r: f"{r['fecha_display']} 👁️" if r["observaciones"].strip() else r["fecha_display"],
-    axis=1
-)
-
-st.dataframe(
-    df_mes[[
-        "fecha_display", "dow",
-        "ventas_manana_eur", "ventas_tarde_eur", "ventas_noche_eur",
-        "ventas_total_eur",
-        "comensales_manana", "comensales_tarde", "comensales_noche",
-        "tickets_manana", "tickets_tarde", "tickets_noche",
-        "observaciones"
-    ]].rename(columns={"fecha_display": "fecha"}),
-    hide_index=True,
-    use_container_width=True
-)
