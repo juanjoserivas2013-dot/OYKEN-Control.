@@ -3,142 +3,76 @@ import pandas as pd
 from pathlib import Path
 from datetime import date
 
-# =========================
-# CONFIGURACIÓN
-# =========================
+# ==============================
+# TÍTULO DE LA PÁGINA
+# ==============================
 st.title("OYKEN · Control Operativo")
-
 st.markdown("**Entra en Oyken. En 30 segundos entiendes mejor tu negocio.**")
 st.caption("Sistema automático basado en criterio operativo")
 
+st.divider()
+
+# ==============================
+# CARGA DE DATOS
+# ==============================
 DATA_FILE = Path("ventas.csv")
 
-DOW_ES = {
-    0: "Lunes", 1: "Martes", 2: "Miércoles",
-    3: "Jueves", 4: "Viernes", 5: "Sábado", 6: "Domingo"
-}
-
-COLUMNAS = [
-    "fecha",
-    "ventas_manana_eur", "ventas_tarde_eur", "ventas_noche_eur", "ventas_total_eur",
-    "comensales_manana", "comensales_tarde", "comensales_noche",
-    "tickets_manana", "tickets_tarde", "tickets_noche",
-    "observaciones"
-]
-
-# =========================
-# CARGA DE DATOS
-# =========================
 if DATA_FILE.exists():
     df = pd.read_csv(DATA_FILE, parse_dates=["fecha"])
 else:
-    df = pd.DataFrame(columns=COLUMNAS)
-
-for col in COLUMNAS:
-    if col not in df.columns:
-        df[col] = 0 if col not in ["fecha", "observaciones"] else ""
-
-df["observaciones"] = df["observaciones"].fillna("")
-
-# =========================
-# REGISTRO DIARIO
-# =========================
-st.subheader("Registro diario")
-
-with st.form("form_ventas", clear_on_submit=True):
-    fecha = st.date_input("Fecha", value=date.today(), format="DD/MM/YYYY")
-
-    st.markdown("**Ventas (€)**")
-    v1, v2, v3 = st.columns(3)
-    vm = v1.number_input("Mañana", min_value=0.0, step=10.0)
-    vt = v2.number_input("Tarde", min_value=0.0, step=10.0)
-    vn = v3.number_input("Noche", min_value=0.0, step=10.0)
-
-    st.markdown("**Comensales**")
-    c1, c2, c3 = st.columns(3)
-    cm = c1.number_input("Mañana ", min_value=0, step=1)
-    ct = c2.number_input("Tarde ", min_value=0, step=1)
-    cn = c3.number_input("Noche ", min_value=0, step=1)
-
-    st.markdown("**Tickets**")
-    t1, t2, t3 = st.columns(3)
-    tm = t1.number_input("Mañana  ", min_value=0, step=1)
-    tt = t2.number_input("Tarde  ", min_value=0, step=1)
-    tn = t3.number_input("Noche  ", min_value=0, step=1)
-
-    observaciones = st.text_area(
-        "Observaciones del día",
-        placeholder="Clima, eventos, incidencias, promociones, obras, festivos…",
-        height=100
-    )
-
-    guardar = st.form_submit_button("Guardar venta")
-
-if guardar:
-    total = vm + vt + vn
-
-    nueva = pd.DataFrame([{
-        "fecha": pd.to_datetime(fecha),
-        "ventas_manana_eur": vm,
-        "ventas_tarde_eur": vt,
-        "ventas_noche_eur": vn,
-        "ventas_total_eur": total,
-        "comensales_manana": cm,
-        "comensales_tarde": ct,
-        "comensales_noche": cn,
-        "tickets_manana": tm,
-        "tickets_tarde": tt,
-        "tickets_noche": tn,
-        "observaciones": observaciones.strip()
-    }])
-
-    df = pd.concat([df, nueva], ignore_index=True)
-    df = df.drop_duplicates(subset=["fecha"], keep="last")
-    df.to_csv(DATA_FILE, index=False)
-    st.success("Venta guardada correctamente")
-    st.rerun()
-
-if df.empty:
-    st.info("Aún no hay ventas registradas.")
+    st.warning("No se ha encontrado el archivo ventas.csv")
     st.stop()
 
-# =========================
-# PREPARACIÓN ISO
-# =========================
-df = df.sort_values("fecha")
-iso = df["fecha"].dt.isocalendar()
-df["iso_year"] = iso.year
-df["iso_week"] = iso.week
-df["weekday"] = df["fecha"].dt.weekday
-df["dow"] = df["weekday"].map(DOW_ES)
+# ==============================
+# FILTRO DE FECHA
+# ==============================
+fecha_seleccionada = st.date_input(
+    "Selecciona una fecha",
+    value=date.today()
+)
 
-# =========================
-# BLOQUE HOY
-# =========================
+df_dia = df[df["fecha"].dt.date == fecha_seleccionada]
+
+if df_dia.empty:
+    st.info("No hay datos para la fecha seleccionada")
+    st.stop()
+
 st.divider()
-st.subheader("HOY")
 
-fecha_hoy = pd.to_datetime(date.today())
-iso_hoy = fecha_hoy.isocalendar()
+# ==============================
+# KPIs PRINCIPALES
+# ==============================
+ventas_total = df_dia["ventas"].sum()
+comensales = df_dia["comensales"].sum()
+tickets = df_dia["tickets"].sum()
 
-venta_hoy = df[df["fecha"] == fecha_hoy]
+ticket_medio = ventas_total / tickets if tickets > 0 else 0
+venta_por_comensal = ventas_total / comensales if comensales > 0 else 0
 
-def fila_o_cero(col):
-    return fila[col] if not venta_hoy.empty else 0
+col1, col2, col3, col4 = st.columns(4)
 
-if not venta_hoy.empty:
-    fila = venta_hoy.iloc[0]
+col1.metric("Ventas (€)", f"{ventas_total:,.2f}")
+col2.metric("Comensales", int(comensales))
+col3.metric("Tickets", int(tickets))
+col4.metric("Ticket medio (€)", f"{ticket_medio:,.2f}")
 
-vm_h = fila_o_cero("ventas_manana_eur")
-vt_h = fila_o_cero("ventas_tarde_eur")
-vn_h = fila_o_cero("ventas_noche_eur")
-total_h = fila_o_cero("ventas_total_eur")
+st.divider()
 
-cm_h = fila_o_cero("comensales_manana")
-ct_h = fila_o_cero("comensales_tarde")
-cn_h = fila_o_cero("comensales_noche")
+# ==============================
+# RATIOS OPERATIVOS
+# ==============================
+st.subheader("Ratios operativos")
 
-tm_h = fila_o_cero("tickets_manana")
-tt_h = fila_o_cero("tickets_tarde")
-tn_h = fila_o_cero("tickets_noche")
+col1, col2 = st.columns(2)
 
+col1.metric("€ / Comensal", f"{venta_por_comensal:,.2f}")
+col2.metric("Tickets / Comensal", f"{tickets / comensales:.2f}" if comensales > 0 else "0")
+
+# ==============================
+# TABLA DETALLE
+# ==============================
+st.subheader("Detalle del día")
+st.dataframe(
+    df_dia.sort_values("fecha"),
+    use_container_width=True
+)
