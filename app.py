@@ -8,6 +8,17 @@ from datetime import date
 # =========================
 st.set_page_config(page_title="OYKEN · Control Operativo", layout="centered")
 
+menu = st.sidebar.selectbox(
+    "Menú",
+    [
+        "Libro de Registro Diario",
+        "Comportamiento",
+        "Tendencia",
+        "Calidad Operativa"
+    ]
+)
+if menu == "Libro de Registro Diario":
+
 st.title("OYKEN · Control Operativo")
 st.markdown("**Entra en Oyken. En 30 segundos entiendes mejor tu negocio.**")
 st.caption("Sistema automático basado en criterio operativo")
