@@ -83,7 +83,7 @@ var_comensales = variacion(comensales_hoy, comensales_ayer)
 
 with col1:
     st.metric(
-        "Ventas (€)",
+        "ventas (€)",
         f"{ventas_hoy:,.0f}",
         f"{var_ventas:+.1f}% {badge_variacion(var_ventas)}"
     )
@@ -117,7 +117,7 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric(
-        "Ventas vs DOW",
+        "ventas vs DOW",
         f"{ventas_hoy:,.0f}",
         f"{variacion(ventas_hoy, ventas_dow):+.1f}% {badge_variacion(variacion(ventas_hoy, ventas_dow))}"
     )
