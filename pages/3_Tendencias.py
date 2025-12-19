@@ -6,6 +6,7 @@ from datetime import date, timedelta
 # =========================
 # CONFIG
 # =========================
+
 st.title("📊 OIKEN · Tendencias")
 st.caption("Radar de dirección, consistencia y estructura del negocio")
 
