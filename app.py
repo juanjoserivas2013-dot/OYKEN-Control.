@@ -26,7 +26,7 @@ with st.sidebar:
     st.markdown("### Próximamente")
     st.markdown(
         "<span style='color:#999;'>"
-        "Compras · Costes · Resultados"
+        "Compras · Costes · Cuenta de Resultados"
         "</span>",
         unsafe_allow_html=True
     )
