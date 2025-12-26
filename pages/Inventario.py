@@ -6,10 +6,6 @@ from datetime import date
 # =========================
 # CONFIGURACIÓN
 # =========================
-st.set_page_config(
-    page_title="OYKEN · Inventario",
-    layout="centered"
-)
 
 st.title("OYKEN · Inventario")
 st.caption("Registro mensual del valor real del stock")
