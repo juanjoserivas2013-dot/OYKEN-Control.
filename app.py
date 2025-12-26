@@ -15,6 +15,6 @@ OYKEN genera lectura operativa, escenarios de decisión y alerta inteligente ada
 a partir de su realidad diaría.
 
 No sustituye sistemas ya existentes: Los interpreta y los convierte en criterio accionable.
-"""")
+""")
            
 st.markdown("Selecciona un módulo en el menú lateral")
