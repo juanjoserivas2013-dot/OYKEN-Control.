@@ -3,7 +3,12 @@ import pandas as pd
 from pathlib import Path
 from datetime import date
 
-st.title("OYKEN · Gastos")
+# =====================================================
+# CABECERA
+# =====================================================
+st.subheader("OYKEN · Gastos")
+st.markdown("**Registro de gastos operativos no ligados a compras de producto.**")
+st.caption("Aquí se captura la estructura fija y variable del negocio.")
 
 # =====================================================
 # ARCHIVO DE DATOS
@@ -11,24 +16,18 @@ st.title("OYKEN · Gastos")
 DATA_FILE = Path("gastos.csv")
 
 # =====================================================
-# CARGA / INICIALIZACIÓN DE ESTADO
+# ESTADO
 # =====================================================
 if "gastos" not in st.session_state:
     if DATA_FILE.exists():
         st.session_state.gastos = pd.read_csv(DATA_FILE)
     else:
         st.session_state.gastos = pd.DataFrame(
-            columns=[
-                "Fecha",
-                "Mes",
-                "Concepto",
-                "Categoria",
-                "Coste (€)"
-            ]
+            columns=["Fecha", "Mes", "Concepto", "Categoria", "Coste (€)"]
         )
 
 # =====================================================
-# CATEGORÍAS DE GASTO (BASE OYKEN)
+# CATEGORÍAS BASE OYKEN
 # =====================================================
 CATEGORIAS = [
     "Alquiler",
@@ -40,7 +39,7 @@ CATEGORIAS = [
 ]
 
 # =====================================================
-# FORMULARIO DE REGISTRO
+# FORMULARIO
 # =====================================================
 with st.form("registro_gastos", clear_on_submit=True):
 
@@ -54,10 +53,7 @@ with st.form("registro_gastos", clear_on_submit=True):
         )
 
     with col2:
-        categoria = st.selectbox(
-            "Categoría",
-            CATEGORIAS
-        )
+        categoria = st.selectbox("Categoría", CATEGORIAS)
 
     concepto = st.text_input(
         "Concepto / Descripción",
@@ -83,7 +79,7 @@ with st.form("registro_gastos", clear_on_submit=True):
             st.warning("El coste debe ser mayor que cero.")
             st.stop()
 
-        nuevo_gasto = {
+        nuevo = {
             "Fecha": fecha.strftime("%d/%m/%Y"),
             "Mes": fecha.strftime("%Y-%m"),
             "Concepto": concepto,
@@ -92,12 +88,11 @@ with st.form("registro_gastos", clear_on_submit=True):
         }
 
         st.session_state.gastos = pd.concat(
-            [st.session_state.gastos, pd.DataFrame([nuevo_gasto])],
+            [st.session_state.gastos, pd.DataFrame([nuevo])],
             ignore_index=True
         )
 
         st.session_state.gastos.to_csv(DATA_FILE, index=False)
-
         st.success("Gasto registrado correctamente.")
 
 # =====================================================
@@ -108,8 +103,6 @@ st.divider()
 if st.session_state.gastos.empty:
     st.info("No hay gastos registrados todavía.")
 else:
-    st.subheader("Gastos registrados")
-
     st.dataframe(
         st.session_state.gastos,
         hide_index=True,
