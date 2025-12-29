@@ -34,8 +34,13 @@ CATEGORIAS = [
     "Suministros",
     "Mantenimiento",
     "Servicios profesionales",
-    "Marketing",
-    "Otros"
+    "Bancos y Medios de pago",
+    "Tecnología y Plataformas",
+    "Marqueting y Comunicación",
+    "Limpieza y Lavandería",
+    "Uniformes y utensilios",
+    "Vigilancia y Seguridad",
+    "otros Gastos operativos"
 ]
 
 # =====================================================
