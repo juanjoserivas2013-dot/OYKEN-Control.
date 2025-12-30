@@ -427,3 +427,48 @@ with c2:
 with c3:
     st.metric("Ticket medio mes", f"{ticket_medio_mes:,.2f} €")
 
+# =====================================================
+# BASE CUENTA DE RESULTADOS — VENTAS MENSUALES
+# =====================================================
+
+st.divider()
+st.subheader("Base Cuenta de Resultados — Ventas mensuales")
+
+# Ruta estándar OYKEN
+PATH_VENTAS = Path("data/ventas_mensuales.csv")
+
+# Actualizamos automáticamente el mes que se está viendo
+actualizar_mes(
+    PATH_VENTAS,
+    anio_seleccionado,
+    mes_seleccionado,
+    total_mes_actual
+)
+
+# Leemos la tabla anual completa
+df_ventas_anual = leer_tabla_anual(PATH_VENTAS, anio_seleccionado)
+
+# Preparación visual (NO afecta a datos)
+MESES_TXT = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+}
+
+df_ventas_display = df_ventas_anual.copy()
+df_ventas_display["Mes"] = df_ventas_display["mes"].map(MESES_TXT)
+df_ventas_display = df_ventas_display.rename(
+    columns={"total": "Total ventas (€)"}
+)[["Mes", "Total ventas (€)"]]
+
+# Fila TOTAL (visual)
+total_anual = df_ventas_display["Total ventas (€)"].sum()
+df_ventas_display.loc[len(df_ventas_display)] = ["TOTAL", total_anual]
+
+# Mostrar tabla
+st.dataframe(
+    df_ventas_display,
+    hide_index=True,
+    use_container_width=True
+)
+
