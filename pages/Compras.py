@@ -235,3 +235,56 @@ with st.container(border=True):
 
             st.session_state.compras.to_csv(COMPRAS_FILE, index=False)
             st.success("Compra eliminada")
+
+# =========================================================
+# BASE CUENTA DE RESULTADOS — COMPRAS MENSUALES
+# =========================================================
+
+st.divider()
+st.subheader("Base Cuenta de Resultados — Compras mensuales")
+
+if not st.session_state.compras.empty:
+
+    df = st.session_state.compras.copy()
+
+    # Asegurar fecha como datetime
+    df["Fecha"] = pd.to_datetime(df["Fecha"], dayfirst=True, errors="coerce")
+
+    # Selector de año (solo afecta a esta tabla)
+    anio_cr = st.selectbox(
+        "Año base para Cuenta de Resultados",
+        sorted(df["Fecha"].dt.year.dropna().unique()),
+        index=len(sorted(df["Fecha"].dt.year.dropna().unique())) - 1
+    )
+
+    df_anio = df[df["Fecha"].dt.year == anio_cr]
+
+    # Agrupar por mes
+    resumen_mensual = (
+        df_anio
+        .groupby(df_anio["Fecha"].dt.month)["Coste (€)"]
+        .sum()
+        .reindex(range(1, 13), fill_value=0)
+        .reset_index()
+    )
+
+    resumen_mensual.columns = ["Mes", "Compras (€)"]
+
+    resumen_mensual["Mes"] = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ]
+
+    # Mostrar tabla
+    st.dataframe(
+        resumen_mensual,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    # Total anual (informativo)
+    total_anual = resumen_mensual["Compras (€)"].sum()
+    st.metric("Total compras año", f"{total_anual:,.2f} €")
+
+else:
+    st.info("No hay compras registradas todavía.")
