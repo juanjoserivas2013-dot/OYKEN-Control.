@@ -2,147 +2,111 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 
-# =====================================================
-# CONFIGURACIÓN
-# =====================================================
+st.title("Cuenta de Resultados")
 
-st.set_page_config(
-    page_title="OYKEN · Cuenta de Resultados",
-    layout="centered"
+DATA_PATH = Path("data")
+
+# ===============================
+# CONFIGURACIÓN
+# ===============================
+YEAR = st.session_state.get("year_rrhh", 2025)
+
+MESES = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+}
+
+# ===============================
+# FUNCIONES AUXILIARES
+# ===============================
+def load_csv_safe(path):
+    if path.exists():
+        return pd.read_csv(path)
+    return pd.DataFrame()
+
+# ===============================
+# INGRESOS (VENTAS)
+# ===============================
+st.subheader("Ingresos")
+
+df_ventas = load_csv_safe(DATA_PATH / "ventas.csv")
+
+ventas_total = 0.0
+
+if not df_ventas.empty and "fecha" in df_ventas.columns:
+    df_ventas["fecha"] = pd.to_datetime(df_ventas["fecha"], errors="coerce")
+    df_ventas = df_ventas[df_ventas["fecha"].dt.year == YEAR]
+    ventas_total = df_ventas["importe"].sum()
+
+st.metric("Ventas netas", f"{ventas_total:,.2f} €")
+
+# ===============================
+# COSTE DE VENTAS (COGS)
+# ===============================
+st.divider()
+st.subheader("Coste de ventas (COGS)")
+
+df_compras = load_csv_safe(DATA_PATH / "compras.csv")
+
+compras_total = 0.0
+
+if not df_compras.empty and "fecha" in df_compras.columns:
+    df_compras["fecha"] = pd.to_datetime(df_compras["fecha"], errors="coerce")
+    df_compras = df_compras[df_compras["fecha"].dt.year == YEAR]
+    compras_total = df_compras["importe"].sum()
+
+st.write("Compras de producto", f"-{compras_total:,.2f} €")
+
+margen_bruto = ventas_total - compras_total
+
+st.markdown(
+    f"### **MARGEN BRUTO**  \n**{margen_bruto:,.2f} €**"
 )
 
-st.title("OYKEN · Cuenta de Resultados")
-
-# =====================================================
-# ARCHIVOS
-# =====================================================
-
-VENTAS_FILE = Path("ventas.csv")
-COMPRAS_FILE = Path("compras.csv")
-GASTOS_FILE = Path("gastos.csv")
-RRHH_FILE = Path("rrhh_coste_mensual.csv")
-
-# =====================================================
-# SELECTORES DE PERIODO
-# =====================================================
-
-MESES = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-]
-
-mes_sel = st.selectbox("Mes", MESES, index=11)
-anio_sel = st.selectbox("Año", list(range(2022, 2031)), index=3)
-
-mes_num = MESES.index(mes_sel) + 1
-
-st.divider()
-
-# =====================================================
-# INGRESOS · VENTAS
-# =====================================================
-
-ventas_mes = 0.0
-
-if VENTAS_FILE.exists():
-    df_v = pd.read_csv(VENTAS_FILE)
-    df_v["fecha"] = pd.to_datetime(df_v["fecha"])
-
-    ventas_mes = df_v[
-        (df_v["fecha"].dt.month == mes_num) &
-        (df_v["fecha"].dt.year == anio_sel)
-    ]["ventas_total_eur"].sum()
-
-st.subheader("Ingresos")
-st.write("Ventas netas")
-st.write(f"{ventas_mes:,.2f} €")
-
-st.divider()
-
-# =====================================================
-# COSTE DE VENTAS (COGS)
-# =====================================================
-
-compras_producto = 0.0
-
-if COMPRAS_FILE.exists():
-    df_c = pd.read_csv(COMPRAS_FILE)
-    df_c["fecha"] = pd.to_datetime(df_c["fecha"])
-
-    compras_producto = df_c[
-        (df_c["fecha"].dt.month == mes_num) &
-        (df_c["fecha"].dt.year == anio_sel)
-    ]["importe_eur"].sum()
-
-margen_bruto = ventas_mes - compras_producto
-
-st.subheader("Coste de ventas (COGS)")
-st.write("Compras de producto")
-st.write(f"-{compras_producto:,.2f} €")
-
-st.write("Variación de inventario")
-st.write("0.00 €")
-
-st.markdown("**MARGEN BRUTO**")
-st.markdown(f"**{margen_bruto:,.2f} €**")
-
-st.divider()
-
-# =====================================================
+# ===============================
 # GASTOS DE PERSONAL (RRHH)
-# =====================================================
+# ===============================
+st.divider()
+st.subheader("Gastos de personal")
+
+df_rrhh = load_csv_safe(DATA_PATH / f"rrhh_{YEAR}.csv")
 
 coste_personal = 0.0
 
-if RRHH_FILE.exists():
-    df_rrhh = pd.read_csv(RRHH_FILE)
+if not df_rrhh.empty and "coste_empresa" in df_rrhh.columns:
+    coste_personal = df_rrhh["coste_empresa"].sum()
 
-    fila = df_rrhh[
-        (df_rrhh["Año"] == anio_sel) &
-        (df_rrhh["Mes"] == mes_sel)
-    ]
+st.write("Coste de personal", f"-{coste_personal:,.2f} €")
 
-    if not fila.empty:
-        coste_personal = float(fila.iloc[0]["Coste Empresa (€)"])
-
-st.subheader("Gastos de personal")
-st.write("Coste de personal")
-st.write(f"-{coste_personal:,.2f} €")
-
-st.divider()
-
-# =====================================================
+# ===============================
 # GASTOS OPERATIVOS
-# =====================================================
+# ===============================
+st.divider()
+st.subheader("Gastos operativos")
+
+df_gastos = load_csv_safe(DATA_PATH / "gastos.csv")
 
 gastos_operativos = 0.0
 
-if GASTOS_FILE.exists():
-    df_g = pd.read_csv(GASTOS_FILE)
-    df_g["fecha"] = pd.to_datetime(df_g["fecha"])
+if not df_gastos.empty and "fecha" in df_gastos.columns:
+    df_gastos["fecha"] = pd.to_datetime(df_gastos["fecha"], errors="coerce")
+    df_gastos = df_gastos[df_gastos["fecha"].dt.year == YEAR]
+    gastos_operativos = df_gastos["importe"].sum()
 
-    gastos_operativos = df_g[
-        (df_g["fecha"].dt.month == mes_num) &
-        (df_g["fecha"].dt.year == anio_sel)
-    ]["importe_eur"].sum()
+st.write("Otros gastos operativos", f"-{gastos_operativos:,.2f} €")
 
-st.subheader("Gastos operativos")
-st.write("Alquiler y otros gastos")
-st.write(f"-{gastos_operativos:,.2f} €")
-
-st.divider()
-
-# =====================================================
+# ===============================
 # EBITDA
-# =====================================================
+# ===============================
+st.divider()
+st.subheader("Resultado del periodo")
 
 ebitda = margen_bruto - coste_personal - gastos_operativos
 
-st.subheader("Resultado del periodo")
-st.markdown("**EBITDA**")
-st.markdown(f"### **{ebitda:,.2f} €**")
-
-st.caption(
-    "La cuenta de resultados se construye a partir de datos reales "
-    "de ventas, compras, RRHH y gastos."
+st.markdown(
+    f"""
+    ### **EBITDA**
+    **{ebitda:,.2f} €**
+    """
 )
