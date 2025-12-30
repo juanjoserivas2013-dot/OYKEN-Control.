@@ -6,11 +6,6 @@ from pathlib import Path
 # CONFIGURACIÓN
 # =====================================================
 
-st.set_page_config(
-    page_title="OYKEN · RRHH",
-    layout="centered"
-)
-
 st.title("OYKEN · RRHH")
 st.caption("Gestión estructural de costes de personal")
 
