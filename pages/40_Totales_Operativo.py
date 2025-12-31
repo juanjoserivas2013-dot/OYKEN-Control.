@@ -123,7 +123,7 @@ with c3:
 df_filtro = df_anio[
     (df_anio["origen"].isin(origen_sel)) &
     (df_anio["concepto"].isin(concepto_sel)) &
-    (df_anio["mes"].isin(mes_sel))
+    (df_anio["mes"]== mes_sel))
 ].copy()
 
 # =========================
