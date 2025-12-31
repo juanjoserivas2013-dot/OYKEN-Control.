@@ -431,33 +431,62 @@ with c3:
 # BASE CUENTA DE RESULTADOS – VENTAS MENSUALES
 # =========================
 
-# ==============================
-# PERSISTENCIA BASE CUENTA RESULTADOS – VENTAS
-# ==============================
+st.divider()
+st.subheader("Base Cuenta de Resultados – Ventas mensuales")
 
+# Aseguramos columna fecha en datetime
+df["fecha"] = pd.to_datetime(df["fecha"])
+
+# Agrupación mensual
+ventas_mensuales = (
+    df
+    .assign(
+        año=df["fecha"].dt.year,
+        mes=df["fecha"].dt.month
+    )
+    .groupby(["año", "mes"], as_index=False)
+    .agg(
+        ventas_mes=("ventas_total_eur", "sum")
+    )
+)
+
+# Tabla 12 meses para el año seleccionado
+año_actual = fecha_hoy.year
+
+tabla_resultado = (
+    ventas_mensuales[ventas_mensuales["año"] == año_actual]
+    .set_index("mes")
+    .reindex(range(1, 13), fill_value=0)
+    .reset_index()
+)
+
+tabla_resultado["Mes"] = tabla_resultado["mes"].map({
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+})
+
+tabla_resultado = tabla_resultado[["Mes", "ventas_mes"]]
+tabla_resultado = tabla_resultado.rename(columns={"ventas_mes": "Ventas (€)"})
+
+st.dataframe(
+    tabla_resultado,
+    use_container_width=True,
+    hide_index=True
+)
 from pathlib import Path
 
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
-# base_ventas_df debe ser la tabla que YA estás mostrando
-# Columnas esperadas en pantalla: Mes | Ventas (€)
+# base_ventas_df = la tabla que YA estás mostrando
+# columnas: Mes | Ventas (€)
 
-df_base_ventas = base_ventas_df.copy()
+df_export = base_ventas_df.copy()
+df_export["anio"] = anio_base
+df_export["total"] = df_export["Ventas (€)"]
+df_export["mes"] = df_export["Mes"]
 
-# Normalizar columnas
-df_base_ventas["anio"] = anio_base
-df_base_ventas["mes"] = df_base_ventas["Mes"].astype(str)
-df_base_ventas["total"] = (
-    df_base_ventas["Ventas (€)"]
-    .astype(str)
-    .str.replace(".", "", regex=False)
-    .str.replace(",", ".", regex=False)
-    .astype(float)
-)
+df_export = df_export[["anio", "mes", "total"]]
 
-df_base_ventas = df_base_ventas[["anio", "mes", "total"]]
-
-# Guardar CSV (fuente única)
-ruta = DATA_DIR / "ventas_mensuales.csv"
-df_base_ventas.to_csv(ruta, index=False)
+df_export.to_csv(DATA_DIR / "ventas_mensuales.csv", index=False)
