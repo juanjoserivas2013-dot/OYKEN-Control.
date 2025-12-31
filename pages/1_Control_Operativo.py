@@ -442,7 +442,8 @@ with c1:
     anio_envio = st.selectbox(
         "Año",
         sorted(df["fecha"].dt.year.unique()),
-        index=len(sorted(df["fecha"].dt.year.unique())) - 1
+        index=len(sorted(df["fecha"].dt.year.unique())) - 1,
+        key="anio_envio_totales"
     )
 
 with c2:
@@ -450,10 +451,15 @@ with c2:
         "Mes",
         list(range(1, 13)),
         index=fecha_hoy.month - 1,
-        format_func=lambda x: date(1900, x, 1).strftime("%B")
+        format_func=lambda x: date(1900, x, 1).strftime("%B"),
+        key="mes_envio_totales"
     )
 
-if st.button("Actualizar Totales Operativos", use_container_width=True):
+if st.button(
+    "Actualizar Totales Operativos",
+    use_container_width=True,
+    key="btn_actualizar_totales"
+):
     total_mes = total_ventas_mes(anio_envio, mes_envio)
 
     actualizar_totales_operativos_ventas(
@@ -466,4 +472,3 @@ if st.button("Actualizar Totales Operativos", use_container_width=True):
         f"{anio_envio} enviadas a Totales Operativos "
         f"({total_mes:,.2f} €)."
     )
-
