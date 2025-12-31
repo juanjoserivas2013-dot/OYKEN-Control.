@@ -427,3 +427,48 @@ with c2:
 with c3:
     st.metric("Ticket medio mes", f"{ticket_medio_mes:,.2f} €")
 
+# =========================
+# RESUMEN ANUAL · VENTAS (TABLA SIMPLE)
+# =========================
+
+st.divider()
+st.subheader("Resumen anual · Ventas")
+
+# Selector de año
+anio_tabla = st.selectbox(
+    "Selecciona año",
+    options=sorted(df["fecha"].dt.year.unique()),
+    index=len(sorted(df["fecha"].dt.year.unique())) - 1,
+    key="anio_tabla_resumen"
+)
+
+# Agrupación mensual de ventas
+ventas_mensuales = (
+    df[df["fecha"].dt.year == anio_tabla]
+    .assign(mes=df["fecha"].dt.month)
+    .groupby("mes", as_index=False)
+    .agg(ventas_mes=("ventas_total_eur", "sum"))
+)
+
+# Forzar los 12 meses
+tabla = (
+    pd.DataFrame({"mes": range(1, 13)})
+    .merge(ventas_mensuales, on="mes", how="left")
+    .fillna(0)
+)
+
+# Nombre del mes
+tabla["Mes"] = tabla["mes"].map({
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+})
+
+tabla = tabla[["Mes", "ventas_mes"]]
+tabla = tabla.rename(columns={"ventas_mes": "Ventas del mes (€)"})
+
+st.dataframe(
+    tabla,
+    hide_index=True,
+    use_container_width=True
+)
