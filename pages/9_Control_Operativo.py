@@ -454,3 +454,32 @@ st.dataframe(
     hide_index=True,
     use_container_width=True
 )
+# =========================
+# TABLA DE VENTAS POR MES
+# =========================
+
+st.divider()
+st.subheader("Ventas mensuales")
+
+anio_actual = date.today().year
+
+datos_meses = []
+
+for mes in range(1, 13):
+    ventas_mes = df[
+        (df["fecha"].dt.year == anio_actual) &
+        (df["fecha"].dt.month == mes)
+    ]["ventas_total_eur"].sum()
+
+    datos_meses.append({
+        "Mes": date(1900, mes, 1).strftime("%B"),
+        "Ventas del mes (€)": round(ventas_mes, 2)
+    })
+
+tabla_meses = pd.DataFrame(datos_meses)
+
+st.dataframe(
+    tabla_meses,
+    hide_index=True,
+    use_container_width=True
+)
