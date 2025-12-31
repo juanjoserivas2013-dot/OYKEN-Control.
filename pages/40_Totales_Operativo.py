@@ -92,13 +92,6 @@ with c2:
         sorted(df_anio["concepto"].unique()),
         default=sorted(df_anio["concepto"].unique())
     )
-
-MESES_TXT = {
-    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
-    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
-    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
-}
-
 from datetime import date
 
 MESES_TXT = {
@@ -119,11 +112,10 @@ with c3:
         format_func=lambda m: MESES_TXT[m]
     )
 
-
 df_filtro = df_anio[
     (df_anio["origen"].isin(origen_sel)) &
     (df_anio["concepto"].isin(concepto_sel)) &
-    (df_anio["mes"]== mes_sel))
+    (df_anio["mes"] == mes_sel)
 ].copy()
 
 # =========================
