@@ -428,33 +428,6 @@ with c3:
     st.metric("Ticket medio mes", f"{ticket_medio_mes:,.2f} €")
 
 # =========================
-# TABLA ANUAL · VENTAS (SIMPLE)
-# =========================
-
-st.divider()
-st.subheader("Ventas mensuales · Año seleccionado")
-
-datos_tabla = []
-
-for mes in range(1, 13):
-    ventas_mes_tabla = df[
-        (df["fecha"].dt.year == ano_sel) &
-        (df["fecha"].dt.month == mes)
-    ]["ventas_total_eur"].sum()
-
-    datos_tabla.append({
-        "Mes": date(1900, mes, 1).strftime("%B"),
-        "Ventas del mes (€)": round(ventas_mes_tabla, 2)
-    })
-
-tabla_ventas = pd.DataFrame(datos_tabla)
-
-st.dataframe(
-    tabla_ventas,
-    hide_index=True,
-    use_container_width=True
-)
-# =========================
 # TABLA DE VENTAS POR MES
 # =========================
 
