@@ -434,18 +434,59 @@ with c3:
 st.divider()
 st.subheader("Ventas mensuales")
 
-anio_actual = date.today().year
+# Mapa meses español (NO locale)
+MESES_ES = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+}
+
+# -------------------------
+# SELECTORES
+# -------------------------
+
+col1, col2 = st.columns(2)
+
+with col1:
+    anios_disponibles = sorted(df["fecha"].dt.year.unique())
+    anio_sel = st.selectbox(
+        "Año",
+        anios_disponibles,
+        index=len(anios_disponibles) - 1
+    )
+
+with col2:
+    mes_sel = st.selectbox(
+        "Mes",
+        options=[0] + list(MESES_ES.keys()),
+        format_func=lambda x: "Todos los meses" if x == 0 else MESES_ES[x]
+    )
+
+# -------------------------
+# FILTRADO
+# -------------------------
+
+df_filtrado = df[df["fecha"].dt.year == anio_sel]
+
+if mes_sel != 0:
+    df_filtrado = df_filtrado[df_filtrado["fecha"].dt.month == mes_sel]
+
+# -------------------------
+# CONSTRUCCIÓN TABLA
+# -------------------------
 
 datos_meses = []
 
 for mes in range(1, 13):
-    ventas_mes = df[
-        (df["fecha"].dt.year == anio_actual) &
-        (df["fecha"].dt.month == mes)
+    if mes_sel != 0 and mes != mes_sel:
+        continue
+
+    ventas_mes = df_filtrado[
+        df_filtrado["fecha"].dt.month == mes
     ]["ventas_total_eur"].sum()
 
     datos_meses.append({
-        "Mes": date(1900, mes, 1).strftime("%B"),
+        "Mes": MESES_ES[mes],
         "Ventas del mes (€)": round(ventas_mes, 2)
     })
 
