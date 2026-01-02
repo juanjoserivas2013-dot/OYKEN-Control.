@@ -435,22 +435,8 @@ st.divider()
 st.subheader("Ventas mensuales")
 
 anio_actual = date.today().year
-datos_meses = []
 
-MESES_ES = {
-    1: "Enero",
-    2: "Febrero",
-    3: "Marzo",
-    4: "Abril",
-    5: "Mayo",
-    6: "Junio",
-    7: "Julio",
-    8: "Agosto",
-    9: "Septiembre",
-    10: "Octubre",
-    11: "Noviembre",
-    12: "Diciembre"
-}
+datos_meses = []
 
 for mes in range(1, 13):
     ventas_mes = df[
@@ -459,18 +445,14 @@ for mes in range(1, 13):
     ]["ventas_total_eur"].sum()
 
     datos_meses.append({
-        "Mes": MESES_ES[mes],
+        "Mes": date(1900, mes, 1).strftime("%B"),
         "Ventas del mes (€)": round(ventas_mes, 2)
     })
 
 tabla_meses = pd.DataFrame(datos_meses)
 
-from pathlib import Path
-OUTPUT_FILE = Path("ventas_mensuales.csv")
-tabla_meses.to_csv(OUTPUT_FILE, index=False)
-
 st.dataframe(
     tabla_meses,
     hide_index=True,
     use_container_width=True
-)
+
