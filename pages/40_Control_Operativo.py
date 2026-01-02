@@ -6,7 +6,6 @@ from datetime import date
 # =========================
 # CONFIGURACIÓN
 # =========================
-st.set_page_config(page_title="OYKEN · Control Operativo", layout="centered")
 
 st.title("OYKEN · Control Operativo")
 st.markdown("**Entra en Oyken. En 30 segundos entiendes mejor tu negocio.**")
