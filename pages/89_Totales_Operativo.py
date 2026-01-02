@@ -56,6 +56,7 @@ df = pd.concat(dfs, ignore_index=True)
 # =========================
 # LECTURA COMPRAS MENSUALES
 # =========================
+
 COMPRAS_FILE = Path("compras.csv")
 
 if COMPRAS_FILE.exists():
@@ -88,6 +89,7 @@ if COMPRAS_FILE.exists():
 # =========================
 # LECTURA GASTOS MENSUALES
 # =========================
+
 GASTOS_FILE = Path("gastos.csv")
 
 if GASTOS_FILE.exists():
@@ -112,6 +114,7 @@ if GASTOS_FILE.exists():
 # =========================
 # LECTURA RRHH · COSTE MENSUAL
 # =========================
+
 RRHH_FILE = Path("rrhh_coste_mensual.csv")
 
 if RRHH_FILE.exists():
