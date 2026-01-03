@@ -166,6 +166,10 @@ df_gastos["Fecha"] = pd.to_datetime(
     dayfirst=True,
     errors="coerce"
 )
+df_gastos["Coste (€)"] = pd.to_numeric(
+    df_gastos["Coste (€)"],
+    errors="coerce"
+).fillna(0)
 
 # -------------------------
 # SELECTORES
