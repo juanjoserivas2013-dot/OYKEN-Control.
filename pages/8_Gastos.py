@@ -143,27 +143,74 @@ if st.button("Eliminar gasto"):
     st.success("Gasto eliminado correctamente.")
     
 # =========================================================
-# GASTOS MENSUALES · RESUMEN ANUAL
+# GASTOS MENSUALES
 # =========================================================
 st.divider()
 st.subheader("Gastos mensuales")
 
-# Asegurar fecha como datetime
+# -------------------------
+# MAPA MESES ESPAÑOL
+# -------------------------
+MESES_ES = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+}
+
+# -------------------------
+# PREPARAR DATOS
+# -------------------------
 df_gastos = st.session_state.gastos.copy()
-df_gastos["Fecha"] = pd.to_datetime(df_gastos["Fecha"], dayfirst=True)
+df_gastos["Fecha"] = pd.to_datetime(
+    df_gastos["Fecha"],
+    dayfirst=True,
+    errors="coerce"
+)
 
-anio_actual = date.today().year
+# -------------------------
+# SELECTORES
+# -------------------------
+c1, c2 = st.columns(2)
 
+with c1:
+    anio_sel = st.selectbox(
+        "Año",
+        sorted(df_gastos["Fecha"].dt.year.dropna().unique()),
+        index=len(sorted(df_gastos["Fecha"].dt.year.dropna().unique())) - 1,
+        key="anio_gastos_mensual"
+    )
+
+with c2:
+    mes_sel = st.selectbox(
+        "Mes",
+        options=[0] + list(MESES_ES.keys()),
+        format_func=lambda x: "Todos los meses" if x == 0 else MESES_ES[x],
+        key="mes_gastos_mensual"
+    )
+
+# -------------------------
+# FILTRADO
+# -------------------------
+df_filtrado = df_gastos[df_gastos["Fecha"].dt.year == anio_sel]
+
+if mes_sel != 0:
+    df_filtrado = df_filtrado[df_filtrado["Fecha"].dt.month == mes_sel]
+
+# -------------------------
+# CONSTRUCCIÓN TABLA
+# -------------------------
 datos_meses = []
 
 for mes in range(1, 13):
-    gasto_mes = df_gastos[
-        (df_gastos["Fecha"].dt.year == anio_actual) &
-        (df_gastos["Fecha"].dt.month == mes)
-    ]["Coste (€)"].sum()   # ← CAMBIA AQUÍ si tu columna se llama distinto
+    if mes_sel != 0 and mes != mes_sel:
+        continue
+
+    gasto_mes = df_filtrado[
+        df_filtrado["Fecha"].dt.month == mes
+    ]["Coste (€)"].sum()
 
     datos_meses.append({
-        "Mes": date(1900, mes, 1).strftime("%B"),
+        "Mes": MESES_ES[mes],
         "Gastos del mes (€)": round(gasto_mes, 2)
     })
 
@@ -173,4 +220,9 @@ st.dataframe(
     tabla_gastos,
     hide_index=True,
     use_container_width=True
+)
+
+st.metric(
+    "Total período seleccionado",
+    f"{tabla_gastos['Gastos del mes (€)'].sum():,.2f} €"
 )
