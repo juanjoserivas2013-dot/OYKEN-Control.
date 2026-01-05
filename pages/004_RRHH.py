@@ -195,11 +195,16 @@ st.caption(
     "Este consolidado alimenta directamente la Cuenta de Resultados."
 )
 # =====================================================
-# TOTALES MENSUALES RRHH
+# TOTALES MENSUALES RRHH · CONSOLIDADO (FASE 1)
 # =====================================================
 
 st.divider()
 st.subheader("Totales mensuales RRHH")
+
+from pathlib import Path
+from datetime import datetime
+
+RRHH_MENSUAL_FILE = Path("rrhh_mensual.csv")
 
 # -------------------------
 # MAPA MESES ESPAÑOL
@@ -215,10 +220,11 @@ MESES_ES = [
 c1, c2 = st.columns(2)
 
 with c1:
+    anios_disponibles = sorted(df_puestos["Año"].unique())
     anio_sel = st.selectbox(
         "Año",
-        sorted(df_puestos["Año"].unique()),
-        index=len(sorted(df_puestos["Año"].unique())) - 1,
+        anios_disponibles,
+        index=len(anios_disponibles) - 1,
         key="anio_rrhh_mensual"
     )
 
@@ -226,16 +232,15 @@ with c2:
     mes_sel = st.selectbox(
         "Mes",
         options=[0] + list(range(1, 13)),
-        format_func=lambda x: "Todos los meses" if x == 0 else MESES_ES[x-1],
+        format_func=lambda x: "Todos los meses" if x == 0 else MESES_ES[x - 1],
         key="mes_rrhh_mensual"
     )
 
 # -------------------------
-# FILTRADO POR AÑO
+# PREPARAR COSTES (ROBUSTO)
 # -------------------------
 df_costes_filtrado = df_costes.copy()
 
-# 🔒 Forzar numéricos (CRÍTICO)
 for col in df_costes_filtrado.columns:
     if "€" in col:
         df_costes_filtrado[col] = pd.to_numeric(
@@ -244,7 +249,7 @@ for col in df_costes_filtrado.columns:
         ).fillna(0)
 
 # -------------------------
-# CONSTRUCCIÓN TABLA
+# CONSTRUCCIÓN TABLA VISIBLE
 # -------------------------
 totales = []
 
@@ -252,9 +257,20 @@ for i, mes_nombre in enumerate(MESES_ES, start=1):
     if mes_sel != 0 and i != mes_sel:
         continue
 
-    nomina = df_costes_filtrado.get(f"{mes_nombre} · Nómina", pd.Series()).sum()
-    ss = df_costes_filtrado.get(f"{mes_nombre} · SS", pd.Series()).sum()
-    coste = df_costes_filtrado.get(f"{mes_nombre} · Coste Empresa", pd.Series()).sum()
+    nomina = df_costes_filtrado.get(
+        f"{mes_nombre} · Nómina",
+        pd.Series(dtype=float)
+    ).sum()
+
+    ss = df_costes_filtrado.get(
+        f"{mes_nombre} · SS",
+        pd.Series(dtype=float)
+    ).sum()
+
+    coste = df_costes_filtrado.get(
+        f"{mes_nombre} · Coste Empresa",
+        pd.Series(dtype=float)
+    ).sum()
 
     totales.append({
         "Mes": mes_nombre,
@@ -275,3 +291,40 @@ st.metric(
     "Coste RRHH período seleccionado",
     f"{df_totales['Coste Empresa (€)'].sum():,.2f} €"
 )
+
+# -------------------------
+# GUARDAR CSV MENSUAL (CANÓNICO)
+# -------------------------
+
+# Crear CSV si no existe
+if not RRHH_MENSUAL_FILE.exists():
+    pd.DataFrame(
+        columns=["anio", "mes", "rrhh_total_eur", "fecha_actualizacion"]
+    ).to_csv(RRHH_MENSUAL_FILE, index=False)
+
+# Preparar datos desde la tabla visible
+df_csv = df_totales.copy()
+df_csv["mes"] = df_csv["Mes"].map(
+    {v: i + 1 for i, v in enumerate(MESES_ES)}
+)
+df_csv["anio"] = anio_sel
+df_csv["rrhh_total_eur"] = df_csv["Coste Empresa (€)"]
+df_csv = df_csv[["anio", "mes", "rrhh_total_eur"]]
+
+# Cargar histórico
+df_hist = pd.read_csv(RRHH_MENSUAL_FILE)
+
+# Overwrite limpio por año + mes
+df_hist = df_hist[
+    ~(
+        (df_hist["anio"] == anio_sel) &
+        (df_hist["mes"].isin(df_csv["mes"]))
+    )
+]
+
+df_csv["fecha_actualizacion"] = datetime.now()
+
+df_final = pd.concat([df_hist, df_csv], ignore_index=True)
+df_final = df_final.sort_values(["anio", "mes"])
+df_final.to_csv(RRHH_MENSUAL_FILE, index=False)
+
