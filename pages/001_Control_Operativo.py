@@ -438,6 +438,16 @@ with c3:
 st.divider()
 st.subheader("Ventas mensuales")
 
+from datetime import datetime
+
+VENTAS_MENSUALES_FILE = Path("ventas_mensuales.csv")
+
+# Crear CSV mensual si no existe (OUTPUT consolidado)
+if not VENTAS_MENSUALES_FILE.exists():
+    pd.DataFrame(
+        columns=["anio", "mes", "ventas_total_eur", "fecha_actualizacion"]
+    ).to_csv(VENTAS_MENSUALES_FILE, index=False)
+
 # Mapa meses español (NO locale)
 MESES_ES = {
     1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
@@ -469,19 +479,29 @@ with col2:
     )
 
 # -------------------------
-# FILTRADO
+# FILTRADO (BASE OPERATIVA)
 # -------------------------
 
-df_filtrado = df[df["fecha"].dt.year == anio_sel]
+df_base = df.copy()
+df_base["fecha"] = pd.to_datetime(df_base["fecha"])
+df_base["ventas_total_eur"] = pd.to_numeric(
+    df_base["ventas_total_eur"],
+    errors="coerce"
+).fillna(0)
+
+df_filtrado = df_base[df_base["fecha"].dt.year == anio_sel]
 
 if mes_sel != 0:
     df_filtrado = df_filtrado[df_filtrado["fecha"].dt.month == mes_sel]
 
 # -------------------------
-# CONSTRUCCIÓN TABLA
+# CONSOLIDACIÓN Y GUARDADO
 # -------------------------
 
-datos_meses = []
+df_vm = pd.read_csv(VENTAS_MENSUALES_FILE)
+
+df_vm["anio"] = pd.to_numeric(df_vm.get("anio"), errors="coerce")
+df_vm["mes"] = pd.to_numeric(df_vm.get("mes"), errors="coerce")
 
 for mes in range(1, 13):
     if mes_sel != 0 and mes != mes_sel:
@@ -491,15 +511,51 @@ for mes in range(1, 13):
         df_filtrado["fecha"].dt.month == mes
     ]["ventas_total_eur"].sum()
 
-    datos_meses.append({
-        "Mes": MESES_ES[mes],
-        "Ventas del mes (€)": round(ventas_mes, 2)
-    })
+    # Overwrite por año + mes
+    df_vm = df_vm[~(
+        (df_vm["anio"] == anio_sel) &
+        (df_vm["mes"] == mes)
+    )]
 
-tabla_meses = pd.DataFrame(datos_meses)
+    df_vm = pd.concat(
+        [
+            df_vm,
+            pd.DataFrame([{
+                "anio": int(anio_sel),
+                "mes": int(mes),
+                "ventas_total_eur": float(ventas_mes),
+                "fecha_actualizacion": datetime.now()
+            }])
+        ],
+        ignore_index=True
+    )
+
+df_vm = df_vm.sort_values(["anio", "mes"])
+df_vm.to_csv(VENTAS_MENSUALES_FILE, index=False)
+
+# -------------------------
+# LECTURA CANÓNICA (CSV)
+# -------------------------
+
+df_vm = pd.read_csv(VENTAS_MENSUALES_FILE)
+
+df_vm = df_vm[df_vm["anio"] == anio_sel]
+
+if mes_sel != 0:
+    df_vm = df_vm[df_vm["mes"] == mes_sel]
+
+df_vm["Mes"] = df_vm["mes"].map(MESES_ES)
+df_vm["Ventas del mes (€)"] = df_vm["ventas_total_eur"].round(2)
+
+tabla_meses = df_vm[["Mes", "Ventas del mes (€)"]]
 
 st.dataframe(
     tabla_meses,
     hide_index=True,
     use_container_width=True
+)
+
+st.metric(
+    "Total ventas período",
+    f"{tabla_meses['Ventas del mes (€)'].sum():,.2f} €"
 )
