@@ -29,7 +29,9 @@ if df.empty:
 df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
 df["mes"] = pd.to_numeric(df["mes"], errors="coerce")
 df["ventas_total_eur"] = pd.to_numeric(df["ventas_total_eur"], errors="coerce")
-df = sort_values(["anio", "mes"])
+
+# ORDEN CRONOLOGICO#
+df = df.sort_values(["anio", "mes"])
 
 # -------------------------
 # SELECTORES
