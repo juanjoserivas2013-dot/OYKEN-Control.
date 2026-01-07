@@ -64,18 +64,10 @@ anios_disponibles = sorted(
     | set(df_g["anio"].dropna())
 )
 
-if not anios_disponibles:
-    st.info("No hay datos suficientes para mostrar EBITDA.")
-    st.stop()
-
 c1, c2 = st.columns(2)
 
 with c1:
-    anio_sel = st.selectbox(
-        "Año",
-        anios_disponibles,
-        index=len(anios_disponibles) - 1
-    )
+    anio_sel = st.selectbox("Año", anios_disponibles, index=len(anios_disponibles) - 1)
 
 with c2:
     mes_sel = st.selectbox(
@@ -90,18 +82,10 @@ with c2:
 # =========================
 # FILTRADO
 # =========================
-df_v = df_v[df_v["anio"] == anio_sel]
-df_c = df_c[df_c["anio"] == anio_sel]
-df_r = df_r[df_r["anio"] == anio_sel]
-df_g = df_g[df_g["anio"] == anio_sel]
-df_i = df_i[df_i["anio"] == anio_sel]
-
-if mes_sel != 0:
-    df_v = df_v[df_v["mes"] == mes_sel]
-    df_c = df_c[df_c["mes"] == mes_sel]
-    df_r = df_r[df_r["mes"] == mes_sel]
-    df_g = df_g[df_g["mes"] == mes_sel]
-    df_i = df_i[df_i["mes"] == mes_sel]
+for name in ["df_v", "df_c", "df_r", "df_g", "df_i"]:
+    locals()[name] = locals()[name][locals()[name]["anio"] == anio_sel]
+    if mes_sel != 0:
+        locals()[name] = locals()[name][locals()[name]["mes"] == mes_sel]
 
 # =========================
 # BASE MENSUAL
@@ -116,8 +100,13 @@ base = base.merge(df_i[["mes", "variacion_inventario_eur"]], on="mes", how="left
 
 base = base.fillna(0)
 
+if mes_sel != 0:
+    base = base[base["mes"] == mes_sel]
+
+base = base.sort_values("mes")
+
 # =========================
-# CÁLCULOS EBITDA
+# CÁLCULOS
 # =========================
 base["ebitda_base_eur"] = (
     base["ventas_total_eur"]
@@ -131,15 +120,6 @@ base["ebitda_ajustado_eur"] = (
     - base["variacion_inventario_eur"]
 )
 
-# Filtro visual
-if mes_sel != 0:
-    base = base[base["mes"] == mes_sel]
-
-base = base.sort_values("mes")
-
-# =========================
-# PRESENTACIÓN
-# =========================
 MESES_ES = {
     1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
     5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
@@ -148,41 +128,65 @@ MESES_ES = {
 
 base["Mes"] = base["mes"].map(MESES_ES)
 
-tabla = base[[
-    "Mes",
-    "ventas_total_eur",
-    "compras_total_eur",
-    "rrhh_total_eur",
-    "gastos_total_eur",
-    "variacion_inventario_eur",
-    "ebitda_ajustado_eur"
-]].rename(columns={
-    "ventas_total_eur": "Ventas (€)",
-    "compras_total_eur": "Compras (€)",
-    "rrhh_total_eur": "RRHH (€)",
-    "gastos_total_eur": "Gastos (€)",
-    "variacion_inventario_eur": "Variación inventario (€)",
-    "ebitda_ajustado_eur": "EBITDA ajustado (€)"
-})
-
-# TOTAL
-if mes_sel == 0:
-    total = pd.DataFrame([{
-        "Mes": "TOTAL",
-        "Ventas (€)": tabla["Ventas (€)"].sum(),
-        "Compras (€)": tabla["Compras (€)"].sum(),
-        "RRHH (€)": tabla["RRHH (€)"].sum(),
-        "Gastos (€)": tabla["Gastos (€)"].sum(),
-        "Variación inventario (€)": tabla["Variación inventario (€)"].sum(),
-        "EBITDA ajustado (€)": tabla["EBITDA ajustado (€)"].sum()
-    }])
-    tabla = pd.concat([tabla, total], ignore_index=True)
-
+# =====================================================
+# BLOQUE 1 — EBITDA OPERATIVO
+# =====================================================
 st.divider()
-st.subheader("EBITDA · Detalle mensual (ajustado por inventario)")
+st.subheader("EBITDA operativo (sin inventario)")
 
 st.dataframe(
-    tabla,
+    base[[
+        "Mes",
+        "ventas_total_eur",
+        "compras_total_eur",
+        "rrhh_total_eur",
+        "gastos_total_eur",
+        "ebitda_base_eur"
+    ]].rename(columns={
+        "ventas_total_eur": "Ventas (€)",
+        "compras_total_eur": "Compras (€)",
+        "rrhh_total_eur": "RRHH (€)",
+        "gastos_total_eur": "Gastos (€)",
+        "ebitda_base_eur": "EBITDA operativo (€)"
+    }),
+    hide_index=True,
+    use_container_width=True
+)
+
+# =====================================================
+# BLOQUE 2 — AJUSTE POR VARIACIÓN DE INVENTARIO
+# =====================================================
+st.divider()
+st.subheader("Ajuste por variación de inventario")
+
+st.dataframe(
+    base[[
+        "Mes",
+        "variacion_inventario_eur"
+    ]].rename(columns={
+        "variacion_inventario_eur": "Variación inventario (€)"
+    }),
+    hide_index=True,
+    use_container_width=True
+)
+
+# =====================================================
+# BLOQUE 3 — EBITDA AJUSTADO
+# =====================================================
+st.divider()
+st.subheader("EBITDA ajustado (consumo real)")
+
+st.dataframe(
+    base[[
+        "Mes",
+        "ebitda_base_eur",
+        "variacion_inventario_eur",
+        "ebitda_ajustado_eur"
+    ]].rename(columns={
+        "ebitda_base_eur": "EBITDA operativo (€)",
+        "variacion_inventario_eur": "Variación inventario (€)",
+        "ebitda_ajustado_eur": "EBITDA ajustado (€)"
+    }),
     hide_index=True,
     use_container_width=True
 )
