@@ -4,12 +4,9 @@ import numpy as np
 from pathlib import Path
 
 # =========================
-# CONFIGURACIÓN GENERAL
+# CONFIGURACIÓN
 # =========================
-st.set_page_config(
-    page_title="OIKEN · Tendencias",
-    layout="centered"
-)
+st.set_page_config(page_title="OIKEN · Tendencias", layout="centered")
 
 st.title("OIKEN · Tendencias")
 st.caption("Estructura, estabilidad y robustez del negocio")
@@ -23,9 +20,7 @@ if not DATA_FILE.exists():
     st.error("No hay datos suficientes para analizar tendencias.")
     st.stop()
 
-df = pd.read_csv(DATA_FILE, parse_dates=["fecha"])
-df = df.sort_values("fecha")
-
+df = pd.read_csv(DATA_FILE, parse_dates=["fecha"]).sort_values("fecha")
 hoy = df["fecha"].max()
 
 # =========================
@@ -34,8 +29,9 @@ hoy = df["fecha"].max()
 def rango_fechas(df):
     return f"{df['fecha'].min().strftime('%d/%m')} – {df['fecha'].max().strftime('%d/%m')}"
 
-# Detección simple de modo móvil (placeholder)
-is_mobile = st.session_state.get("is_mobile", False)
+def cv_turno_seguro(ventas, tickets):
+    tm = np.where(tickets > 0, ventas / tickets, np.nan)
+    return np.nanstd(tm)
 
 # =========================
 # VARIABLES BASE
@@ -63,207 +59,190 @@ df_10 = df.tail(10)
 df_15 = df.tail(15)
 
 # =========================
-# IMPORTS CORE
+# RENDER PREMIUM
 # =========================
-from oiken.core.oiken_core_wrappers import (
-    core_direccion_negocio,
-    core_consistencia_resultado,
-    core_dias_fuertes,
-    core_estabilidad_ticket,
-    core_volatilidad_turnos,
-    core_dependencia_picos
-)
-
-# =========================
-# RENDER UNIFICADO
-# =========================
-def render_core_block(
-    title: str,
-    core: dict,
-    main_metric_label: str,
-    main_metric_value: str,
-    period: str,
-):
-    st.subheader(title.upper())
-
-    # Estado arriba en móvil
-    if is_mobile:
-        st.caption(f"Estado: {core['assessment']['state']}")
-
-    # Métrica principal
-    st.markdown(f"**{main_metric_label.upper()}**")
-    st.markdown(f"### {main_metric_value}")
-
-    # Periodo
-    st.caption(f"Periodo analizado: {period}")
-
-    # Texto Core
-    st.markdown(core["narrative"]["text"])
-
-    # Estado abajo en desktop
-    if not is_mobile:
-        st.caption(
-            f"Estado estructural: {core['assessment']['state']} · "
-            f"Severidad: {core['assessment']['severity']}"
-        )
-    else:
-        st.caption(f"Severidad: {core['assessment']['severity']}")
-
+def render_bloque(titulo, metrica_label, metrica_valor, periodo, texto):
+    st.subheader(titulo.upper())
+    st.markdown(f"**{metrica_label.upper()}**")
+    st.markdown(f"### {metrica_valor}")
+    st.caption(f"Periodo analizado: {periodo}")
+    st.markdown(texto)
     st.divider()
 
 # =========================
-# 1 · DIRECCIÓN DEL NEGOCIO
+# BLOQUE 1 · DIRECCIÓN DEL NEGOCIO
 # =========================
 if len(df_semana) >= 5:
-    mm_actual = df_semana["ventas_total_eur"].mean()
+    media_actual = df_semana["ventas_total_eur"].mean()
     prev = df[df["fecha"] < lunes_semana].tail(len(df_semana))
 
-    if len(prev) >= len(df_semana):
-        mm_prev = prev["ventas_total_eur"].mean()
-        var_mm = ((mm_actual - mm_prev) / mm_prev * 100) if mm_prev > 0 else 0
+    if len(prev) >= len(df_semana) and prev["ventas_total_eur"].mean() > 0:
+        variacion = (
+            (media_actual - prev["ventas_total_eur"].mean())
+            / prev["ventas_total_eur"].mean()
+            * 100
+        )
     else:
-        var_mm = 0
+        variacion = 0
 
-    metrics = {
-        "mean_current": mm_actual,
-        "variation_pct": var_mm,
-        "window_days": len(df_semana)
-    }
+    texto = f"""
+Este bloque analiza la dirección inmediata del sistema comercial,
+evaluando la evolución del ritmo medio de generación de ingresos
+en el corto plazo.
 
-    core = core_direccion_negocio(metrics)
+La media diaria observada se sitúa en {media_actual:,.0f} €, con una
+variación del {variacion:+.1f} %, lo que refleja un cambio efectivo
+en el comportamiento reciente del sistema.
+"""
 
-    render_core_block(
-        title="Dirección del negocio",
-        core=core,
-        main_metric_label="Media diaria",
-        main_metric_value=f"{mm_actual:,.0f} €",
-        period=rango_fechas(df_semana)
+    render_bloque(
+        "Dirección del negocio",
+        "Media diaria",
+        f"{media_actual:,.0f} €",
+        rango_fechas(df_semana),
+        texto
     )
 
 # =========================
-# 2 · CONSISTENCIA DEL RESULTADO
+# BLOQUE 2 · CONSISTENCIA DEL RESULTADO
 # =========================
-if len(df_7) >= 7:
-    cv_ventas = df_7["ventas_total_eur"].std() / df_7["ventas_total_eur"].mean() * 100
+if len(df_7) >= 7 and df_7["ventas_total_eur"].mean() > 0:
+    cv_ventas = (
+        df_7["ventas_total_eur"].std()
+        / df_7["ventas_total_eur"].mean()
+        * 100
+    )
 
-    metrics = {
-        "cv_pct": cv_ventas,
-        "window_days": 7
-    }
+    texto = f"""
+Este bloque evalúa la consistencia del resultado diario, entendida
+como la capacidad del sistema para generar ventas de forma regular
+y predecible.
 
-    core = core_consistencia_resultado(metrics)
+El coeficiente de variación observado se sitúa en {cv_ventas:.1f} %,
+describiendo el nivel de estabilidad interna del sistema operativo.
+"""
 
-    render_core_block(
-        title="Consistencia del resultado",
-        core=core,
-        main_metric_label="Coeficiente de variación",
-        main_metric_value=f"{cv_ventas:.1f} %",
-        period=rango_fechas(df_7)
+    render_bloque(
+        "Consistencia del resultado",
+        "Coeficiente de variación",
+        f"{cv_ventas:.1f} %",
+        rango_fechas(df_7),
+        texto
     )
 
 # =========================
-# 3 · DÍAS FUERTES Y DÉBILES
+# BLOQUE 3 · DÍAS FUERTES Y DÉBILES
 # =========================
 if len(df_15) >= 15:
     df_15 = df_15.copy()
     df_15["weekday"] = df_15["fecha"].dt.day_name()
+
     media_dia = df_15.groupby("weekday")["ventas_total_eur"].mean()
-    media_global = df_15["ventas_total_eur"].mean()
 
-    metrics = {
-        "dia_fuerte": media_dia.idxmax(),
-        "dia_debil": media_dia.idxmin(),
-        "diff_fuerte_pct": (media_dia.max()/media_global - 1) * 100,
-        "diff_debil_pct": (media_dia.min()/media_global - 1) * 100,
-        "window_days": 15
-    }
+    dia_fuerte = media_dia.idxmax()
+    dia_debil = media_dia.idxmin()
 
-    core = core_dias_fuertes(metrics)
+    texto = f"""
+El análisis por día de la semana muestra una estructura asimétrica
+del rendimiento.
 
-    render_core_block(
-        title="Días fuertes y días débiles",
-        core=core,
-        main_metric_label="Día más fuerte / débil",
-        main_metric_value=f"{metrics['dia_fuerte']} / {metrics['dia_debil']}",
-        period=rango_fechas(df_15)
+El día más fuerte es {dia_fuerte} y el más débil {dia_debil}, lo que
+condiciona la distribución temporal del esfuerzo y del retorno
+operativo.
+"""
+
+    render_bloque(
+        "Días fuertes y días débiles",
+        "Semana",
+        f"{dia_fuerte} / {dia_debil}",
+        rango_fechas(df_15),
+        texto
     )
 
 # =========================
-# 4 · ESTABILIDAD DEL TICKET MEDIO
+# BLOQUE 4 · ESTABILIDAD DEL TICKET MEDIO
 # =========================
-if len(df_7) >= 7:
-    cv_ticket = df_7["ticket_medio"].std() / df_7["ticket_medio"].mean() * 100
+if len(df_7) >= 7 and df_7["ticket_medio"].mean() > 0:
+    cv_ticket = (
+        df_7["ticket_medio"].std()
+        / df_7["ticket_medio"].mean()
+        * 100
+    )
 
-    metrics = {
-        "cv_pct": cv_ticket,
-        "window_days": 7
-    }
+    texto = f"""
+Este bloque evalúa la regularidad del ingreso por operación,
+integrando el comportamiento del cliente y la ejecución comercial.
 
-    core = core_estabilidad_ticket(metrics)
+El coeficiente de variación del ticket medio se sitúa en {cv_ticket:.1f} %,
+reflejando el grado de estabilidad del comportamiento de venta.
+"""
 
-    render_core_block(
-        title="Estabilidad del ticket medio",
-        core=core,
-        main_metric_label="CV ticket medio",
-        main_metric_value=f"{cv_ticket:.1f} %",
-        period=rango_fechas(df_7)
+    render_bloque(
+        "Estabilidad del ticket medio",
+        "Coeficiente de variación",
+        f"{cv_ticket:.1f} %",
+        rango_fechas(df_7),
+        texto
     )
 
 # =========================
-# 5 · VOLATILIDAD POR TURNOS
+# BLOQUE 5 · VOLATILIDAD POR TURNOS
 # =========================
-def cv_turno(ventas, tickets):
-    tm = np.where(tickets > 0, ventas / tickets, np.nan)
-    return np.nanstd(tm) / np.nanmean(tm) * 100
-
 if len(df_7) >= 7:
     tabla_turnos = [
-        {"Turno": "Mañana", "CV Ticket (%)": cv_turno(df_7["ventas_manana_eur"], df_7["tickets_manana"])},
-        {"Turno": "Tarde",  "CV Ticket (%)": cv_turno(df_7["ventas_tarde_eur"], df_7["tickets_tarde"])},
-        {"Turno": "Noche",  "CV Ticket (%)": cv_turno(df_7["ventas_noche_eur"], df_7["tickets_noche"])},
+        {"Turno": "Mañana", "CV": cv_turno_seguro(df_7["ventas_manana_eur"], df_7["tickets_manana"])},
+        {"Turno": "Tarde",  "CV": cv_turno_seguro(df_7["ventas_tarde_eur"], df_7["tickets_tarde"])},
+        {"Turno": "Noche",  "CV": cv_turno_seguro(df_7["ventas_noche_eur"], df_7["tickets_noche"])},
     ]
 
-    metrics = {
-        "tabla_cv": tabla_turnos,
-        "window_days": 7
-    }
+    turno_mas_volatil = max(tabla_turnos, key=lambda x: x["CV"])["Turno"]
 
-    core = core_volatilidad_turnos(metrics)
+    texto = f"""
+El análisis por franjas horarias muestra una ejecución no homogénea
+entre turnos.
 
-    if not is_mobile:
-        st.table(pd.DataFrame(tabla_turnos))
+El turno con mayor volatilidad es {turno_mas_volatil}, lo que introduce
+fricción en la previsibilidad del resultado diario.
+"""
 
-    render_core_block(
-        title="Volatilidad por turnos",
-        core=core,
-        main_metric_label="Turno más volátil",
-        main_metric_value=max(tabla_turnos, key=lambda x: x["CV Ticket (%)"])["Turno"],
-        period=rango_fechas(df_7)
+    render_bloque(
+        "Volatilidad por turnos",
+        "Turno más volátil",
+        turno_mas_volatil,
+        rango_fechas(df_7),
+        texto
     )
 
 # =========================
-# 6 · DEPENDENCIA DE PICOS
+# BLOQUE 6 · DEPENDENCIA DE PICOS
 # =========================
 if len(df_10) >= 10:
     media = df_10["ventas_total_eur"].mean()
     desv = df_10["ventas_total_eur"].std()
 
-    picos = df_10[df_10["ventas_total_eur"] > media + 2 * desv]
-    pct_picos = picos["ventas_total_eur"].sum() / df_10["ventas_total_eur"].sum() * 100
+    if media > 0 and desv > 0:
+        pct_picos = (
+            df_10[df_10["ventas_total_eur"] > media + 2 * desv]["ventas_total_eur"].sum()
+            / df_10["ventas_total_eur"].sum()
+            * 100
+        )
+    else:
+        pct_picos = 0
 
-    metrics = {
-        "pct_picos": pct_picos,
-        "window_days": 10
-    }
+    texto = f"""
+Este bloque evalúa la dependencia del negocio respecto a días de
+ventas excepcionalmente altas.
 
-    core = core_dependencia_picos(metrics)
+Los picos concentran el {pct_picos:.1f} % del volumen total, lo que
+describe el grado de robustez estructural del sistema.
+"""
 
-    render_core_block(
-        title="Dependencia de picos",
-        core=core,
-        main_metric_label="Ventas en días excepcionales",
-        main_metric_value=f"{pct_picos:.1f} %",
-        period=rango_fechas(df_10)
+    render_bloque(
+        "Dependencia de picos",
+        "Ventas en días excepcionales",
+        f"{pct_picos:.1f} %",
+        rango_fechas(df_10),
+        texto
     )
 
 # =========================
