@@ -1,162 +1,192 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-from datetime import date
 
-# =====================================================
+# =========================
 # CONFIGURACIÓN
-# =====================================================
+# =========================
+st.set_page_config(
+    page_title="OYKEN · EBITDA",
+    layout="centered"
+)
+
 st.title("OYKEN · EBITDA")
 
-VENTAS_FILE = Path("ventas_mensuales.csv")
+# =========================
+# ARCHIVOS CANÓNICOS
+# =========================
+VENTAS_FILE  = Path("ventas_mensuales.csv")
 COMPRAS_FILE = Path("compras_mensuales.csv")
-RRHH_FILE = Path("rrhh_mensual.csv")
-GASTOS_FILE = Path("gastos_mensuales.csv")
-INVENTARIO_FILE = Path("inventario_mensual.csv")
+RRHH_FILE    = Path("rrhh_mensual.csv")
+GASTOS_FILE  = Path("gastos_mensuales.csv")
 
+if not all(p.exists() for p in [VENTAS_FILE, COMPRAS_FILE, RRHH_FILE, GASTOS_FILE]):
+    st.warning("Aún no existen cierres mensuales suficientes para calcular EBITDA.")
+    st.stop()
+
+# =========================
+# CARGA DE DATOS
+# =========================
+df_v = pd.read_csv(VENTAS_FILE)
+df_c = pd.read_csv(COMPRAS_FILE)
+df_r = pd.read_csv(RRHH_FILE)
+df_g = pd.read_csv(GASTOS_FILE)
+
+# Normalizar tipos
+for df in [df_v, df_c, df_r, df_g]:
+    df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
+    df["mes"] = pd.to_numeric(df["mes"], errors="coerce")
+
+df_v["ventas_total_eur"] = pd.to_numeric(
+    df_v["ventas_total_eur"], errors="coerce"
+).fillna(0)
+
+df_c["compras_total_eur"] = pd.to_numeric(
+    df_c["compras_total_eur"], errors="coerce"
+).fillna(0)
+
+df_r["rrhh_total_eur"] = pd.to_numeric(
+    df_r["rrhh_total_eur"], errors="coerce"
+).fillna(0)
+
+df_g["gastos_total_eur"] = pd.to_numeric(
+    df_g["gastos_total_eur"], errors="coerce"
+).fillna(0)
+
+# =========================
+# SELECTORES
+# =========================
+anios_disponibles = sorted(
+    set(df_v["anio"].dropna().unique())
+    | set(df_c["anio"].dropna().unique())
+    | set(df_r["anio"].dropna().unique())
+    | set(df_g["anio"].dropna().unique())
+)
+
+if not anios_disponibles:
+    st.info("No hay datos suficientes para mostrar EBITDA.")
+    st.stop()
+
+c1, c2 = st.columns(2)
+
+with c1:
+    anio_sel = st.selectbox(
+        "Año",
+        anios_disponibles,
+        index=len(anios_disponibles) - 1
+    )
+
+with c2:
+    mes_sel = st.selectbox(
+        "Mes",
+        options=[0] + list(range(1, 13)),
+        format_func=lambda x: "Todos los meses" if x == 0 else [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ][x - 1]
+    )
+
+# =========================
+# FILTRADO POR AÑO / MES
+# =========================
+df_v = df_v[df_v["anio"] == anio_sel]
+df_c = df_c[df_c["anio"] == anio_sel]
+df_r = df_r[df_r["anio"] == anio_sel]
+df_g = df_g[df_g["anio"] == anio_sel]
+
+if mes_sel != 0:
+    df_v = df_v[df_v["mes"] == mes_sel]
+    df_c = df_c[df_c["mes"] == mes_sel]
+    df_r = df_r[df_r["mes"] == mes_sel]
+    df_g = df_g[df_g["mes"] == mes_sel]
+
+# =========================
+# CRUCE MENSUAL Y CÁLCULO
+# =========================
+base = pd.DataFrame({"mes": range(1, 13)})
+
+base = base.merge(
+    df_v[["mes", "ventas_total_eur"]],
+    on="mes",
+    how="left"
+)
+
+base = base.merge(
+    df_c[["mes", "compras_total_eur"]],
+    on="mes",
+    how="left"
+)
+
+base = base.merge(
+    df_r[["mes", "rrhh_total_eur"]],
+    on="mes",
+    how="left"
+)
+
+base = base.merge(
+    df_g[["mes", "gastos_total_eur"]],
+    on="mes",
+    how="left"
+)
+
+base = base.fillna(0)
+
+base["ebitda_eur"] = (
+    base["ventas_total_eur"]
+    - base["compras_total_eur"]
+    - base["rrhh_total_eur"]
+    - base["gastos_total_eur"]
+)
+
+# Filtro visual de mes
+if mes_sel != 0:
+    base = base[base["mes"] == mes_sel]
+
+base = base.sort_values("mes")
+
+# =========================
+# PRESENTACIÓN TABLA
+# =========================
 MESES_ES = {
     1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
     5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
     9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
 }
 
-# =====================================================
-# CARGA CSV
-# =====================================================
-def cargar_csv(path, col_valor):
-    if not path.exists():
-        return pd.DataFrame(columns=["anio", "mes", col_valor])
-    df = pd.read_csv(path)
-    df[col_valor] = pd.to_numeric(df[col_valor], errors="coerce").fillna(0)
-    return df[["anio", "mes", col_valor]]
+base["Mes"] = base["mes"].map(MESES_ES)
 
-df_ventas = cargar_csv(VENTAS_FILE, "ventas_eur")
-df_compras = cargar_csv(COMPRAS_FILE, "compras_eur")
-df_rrhh = cargar_csv(RRHH_FILE, "rrhh_eur")
-df_gastos = cargar_csv(GASTOS_FILE, "gastos_eur")
+tabla_ebitda = base[[
+    "Mes",
+    "ventas_total_eur",
+    "compras_total_eur",
+    "rrhh_total_eur",
+    "gastos_total_eur",
+    "ebitda_eur"
+]].rename(columns={
+    "ventas_total_eur": "Ventas (€)",
+    "compras_total_eur": "Compras (€)",
+    "rrhh_total_eur": "RRHH (€)",
+    "gastos_total_eur": "Gastos (€)",
+    "ebitda_eur": "EBITDA (€)"
+})
 
-if INVENTARIO_FILE.exists():
-    df_inv = pd.read_csv(INVENTARIO_FILE)
-    df_inv["variacion_inventario_eur"] = pd.to_numeric(
-        df_inv["variacion_inventario_eur"], errors="coerce"
-    ).fillna(0)
-    df_inv = df_inv[["anio", "mes", "variacion_inventario_eur"]]
-else:
-    df_inv = pd.DataFrame(columns=["anio", "mes", "variacion_inventario_eur"])
+# Fila TOTAL solo cuando se muestran todos los meses
+if mes_sel == 0:
+    total = pd.DataFrame([{
+        "Mes": "TOTAL",
+        "Ventas (€)": tabla_ebitda["Ventas (€)"].sum(),
+        "Compras (€)": tabla_ebitda["Compras (€)"].sum(),
+        "RRHH (€)": tabla_ebitda["RRHH (€)"].sum(),
+        "Gastos (€)": tabla_ebitda["Gastos (€)"].sum(),
+        "EBITDA (€)": tabla_ebitda["EBITDA (€)"].sum()
+    }])
+    tabla_ebitda = pd.concat([tabla_ebitda, total], ignore_index=True)
 
-# =====================================================
-# CONSOLIDACIÓN MENSUAL
-# =====================================================
-df = (
-    df_ventas
-    .merge(df_compras, on=["anio", "mes"], how="left")
-    .merge(df_rrhh, on=["anio", "mes"], how="left")
-    .merge(df_gastos, on=["anio", "mes"], how="left")
-    .merge(df_inv, on=["anio", "mes"], how="left")
-    .fillna(0)
-)
-
-df = df.sort_values(["anio", "mes"])
-df["Mes"] = df["mes"].map(MESES_ES)
-
-# =====================================================
-# SELECTORES
-# =====================================================
 st.divider()
-c1, c2 = st.columns(2)
-
-with c1:
-    anio_sel = st.selectbox(
-        "Año",
-        sorted(df["anio"].unique()),
-        index=len(sorted(df["anio"].unique())) - 1
-    )
-
-with c2:
-    mes_sel = st.selectbox(
-        "Mes",
-        options=[0] + list(MESES_ES.keys()),
-        format_func=lambda x: "Todos los meses" if x == 0 else MESES_ES[x]
-    )
-
-df_f = df[df["anio"] == anio_sel]
-if mes_sel != 0:
-    df_f = df_f[df_f["mes"] == mes_sel]
-
-# =====================================================
-# CÁLCULOS
-# =====================================================
-df_f["ebitda_base"] = (
-    df_f["ventas_eur"]
-    - df_f["compras_eur"]
-    - df_f["rrhh_eur"]
-    - df_f["gastos_eur"]
-)
-
-df_f["ebitda_ajustado"] = (
-    df_f["ebitda_base"]
-    - df_f["variacion_inventario_eur"]
-)
-
-# =====================================================
-# BLOQUE 1 — EBITDA OPERATIVO (BASE)
-# =====================================================
-st.divider()
-st.subheader("EBITDA operativo (base)")
+st.subheader("EBITDA · Detalle mensual")
 
 st.dataframe(
-    df_f[[
-        "Mes",
-        "ventas_eur",
-        "compras_eur",
-        "rrhh_eur",
-        "gastos_eur",
-        "ebitda_base"
-    ]].rename(columns={
-        "ventas_eur": "Ventas (€)",
-        "compras_eur": "Compras (€)",
-        "rrhh_eur": "RRHH (€)",
-        "gastos_eur": "Gastos (€)",
-        "ebitda_base": "EBITDA base (€)"
-    }),
-    hide_index=True,
-    use_container_width=True
-)
-
-# =====================================================
-# BLOQUE 2 — AJUSTE POR VARIACIÓN DE INVENTARIO
-# =====================================================
-st.divider()
-st.subheader("Ajuste por variación de inventario")
-
-st.dataframe(
-    df_f[[
-        "Mes",
-        "variacion_inventario_eur"
-    ]].rename(columns={
-        "variacion_inventario_eur": "Variación inventario (€)"
-    }),
-    hide_index=True,
-    use_container_width=True
-)
-
-# =====================================================
-# BLOQUE 3 — EBITDA AJUSTADO
-# =====================================================
-st.divider()
-st.subheader("EBITDA ajustado (consumo real)")
-
-st.dataframe(
-    df_f[[
-        "Mes",
-        "ebitda_base",
-        "variacion_inventario_eur",
-        "ebitda_ajustado"
-    ]].rename(columns={
-        "ebitda_base": "EBITDA base (€)",
-        "variacion_inventario_eur": "Variación inventario (€)",
-        "ebitda_ajustado": "EBITDA ajustado (€)"
-    }),
+    tabla_ebitda,
     hide_index=True,
     use_container_width=True
 )
