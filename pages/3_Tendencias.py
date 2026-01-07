@@ -22,7 +22,7 @@ if not DATA_FILE.exists():
 df = pd.read_csv(DATA_FILE, parse_dates=["fecha"])
 df = df.sort_values("fecha")
 
-hoy = pd.to_datetime(date.today())
+hoy = df["fecha"].max()
 
 # =========================
 # UTILIDAD RANGO FECHAS
