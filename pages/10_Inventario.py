@@ -3,161 +3,188 @@ import pandas as pd
 from pathlib import Path
 from datetime import date
 
-# =========================
+# =====================================================
 # CONFIGURACIÓN
-# =========================
-
+# =====================================================
 st.title("OYKEN · Inventario")
-st.caption("Registro mensual del valor real del stock")
 
-# =========================
-# DATOS
-# =========================
-DATA_FILE = Path("inventario.csv")
+INVENTARIO_FILE = Path("inventario_mensual.csv")
 
-if DATA_FILE.exists():
-    df = pd.read_csv(DATA_FILE)
+MESES_ES = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+}
+
+# =====================================================
+# CARGA / INICIALIZACIÓN CSV
+# =====================================================
+if INVENTARIO_FILE.exists():
+    df_inv = pd.read_csv(INVENTARIO_FILE)
 else:
-    df = pd.DataFrame(
-        columns=["Mes", "Año", "Inventario (€)", "Fecha registro"]
+    df_inv = pd.DataFrame(
+        columns=[
+            "anio",
+            "mes",
+            "inventario_cierre_eur",
+            "variacion_inventario_eur",
+            "fecha_actualizacion"
+        ]
     )
 
-# =========================
-# REGISTRO INVENTARIO
-# =========================
+# Asegurar tipos
+df_inv["anio"] = pd.to_numeric(df_inv["anio"], errors="coerce")
+df_inv["mes"] = pd.to_numeric(df_inv["mes"], errors="coerce")
+df_inv["inventario_cierre_eur"] = pd.to_numeric(
+    df_inv["inventario_cierre_eur"], errors="coerce"
+).fillna(0)
+
+# =====================================================
+# BLOQUE 1 — REGISTRO DE INVENTARIO MENSUAL
+# =====================================================
+st.divider()
 st.subheader("Registro de inventario mensual")
 
-with st.form("form_inventario", clear_on_submit=True):
+with st.form("form_inventario_mensual", clear_on_submit=True):
 
-    col1, col2 = st.columns(2)
+    c1, c2 = st.columns(2)
 
-    with col1:
-        mes = st.selectbox(
-            "Mes inventario",
-            [
-                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-            ],
-            index=date.today().month - 1
+    with c1:
+        anios_disponibles = sorted(
+            set(df_inv["anio"].dropna().astype(int).tolist())
+            | {date.today().year}
+        )
+        anio_sel = st.selectbox("Año", anios_disponibles)
+
+    with c2:
+        mes_sel = st.selectbox(
+            "Mes",
+            options=list(MESES_ES.keys()),
+            format_func=lambda x: MESES_ES[x]
         )
 
-    with col2:
-        año = st.selectbox(
-            "Año",
-            list(range(date.today().year - 3, date.today().year + 2)),
-            index=3
-        )
-
-    inventario = st.number_input(
-        "Valor total del inventario (€)",
-        min_value=0.00,
-        step=100.00,
+    inventario_valor = st.number_input(
+        "Inventario a cierre de mes (€)",
+        min_value=0.0,
+        step=100.0,
         format="%.2f"
     )
 
-    submitted = st.form_submit_button("Guardar inventario del mes")
+    guardar = st.form_submit_button("Guardar inventario")
 
-    if submitted:
-
-        if inventario <= 0:
-            st.warning("El valor del inventario debe ser mayor que cero.")
-            st.stop()
-
-        # Eliminar inventario previo del mismo mes/año (si existe)
-        df = df[
-            ~((df["Mes"] == mes) & (df["Año"] == año))
+    if guardar:
+        # Eliminar posible registro previo del mismo año/mes
+        df_inv = df_inv[
+            ~((df_inv["anio"] == anio_sel) & (df_inv["mes"] == mes_sel))
         ]
 
-        nuevo = {
-            "Mes": mes,
-            "Año": año,
-            "Inventario (€)": round(inventario, 2),
-            "Fecha registro": date.today().strftime("%d/%m/%Y")
-        }
+        nuevo = pd.DataFrame([{
+            "anio": anio_sel,
+            "mes": mes_sel,
+            "inventario_cierre_eur": round(inventario_valor, 2),
+            "variacion_inventario_eur": 0,  # se recalcula luego
+            "fecha_actualizacion": date.today().isoformat()
+        }])
 
-        df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
-        df = df.sort_values(["Año", "Mes"])
+        df_inv = pd.concat([df_inv, nuevo], ignore_index=True)
+        df_inv.to_csv(INVENTARIO_FILE, index=False)
 
-        df.to_csv(DATA_FILE, index=False)
+        st.success("Inventario mensual guardado correctamente")
+        st.rerun()
 
-        st.success("Inventario mensual registrado correctamente.")
-
-# =========================
-# HISTÓRICO
-# =========================
+# =====================================================
+# BLOQUE 2 — HISTÓRICO DE INVENTARIOS MENSUALES
+# =====================================================
 st.divider()
 st.subheader("Histórico de inventarios mensuales")
 
-if df.empty:
-    st.info("Todavía no hay inventarios registrados.")
+if df_inv.empty:
+    st.info("Aún no hay inventarios registrados.")
 else:
+    df_hist = df_inv.sort_values(["anio", "mes"]).copy()
+    df_hist["Mes"] = df_hist["mes"].map(MESES_ES)
+
     st.dataframe(
-        df.sort_values(["Año", "Mes"], ascending=False),
+        df_hist[[
+            "anio",
+            "Mes",
+            "inventario_cierre_eur"
+        ]].rename(columns={
+            "anio": "Año",
+            "inventario_cierre_eur": "Inventario cierre (€)"
+        }),
         hide_index=True,
         use_container_width=True
     )
 
-    st.caption(
-        "Solo existe un inventario válido por mes. "
-        "Si se registra de nuevo, el valor anterior se sustituye."
-    )
 # =====================================================
-# INVENTARIO MENSUAL · LECTURA REAL
+# BLOQUE 3 — VARIACIÓN DE INVENTARIO MENSUAL
 # =====================================================
-
 st.divider()
-st.subheader("Inventario mensual")
+st.subheader("Variación de inventario mensual")
 
-# Copia segura
-df_inv = df.copy()
+if not df_inv.empty:
 
-# Forzar tipos
-df_inv["Año"] = pd.to_numeric(df_inv["Año"], errors="coerce")
-df_inv["Inventario (€)"] = pd.to_numeric(df_inv["Inventario (€)"], errors="coerce")
+    df_var = df_inv.sort_values(["anio", "mes"]).copy()
 
-# -------------------------
-# SELECTORES
-# -------------------------
-c1, c2 = st.columns(2)
-
-with c1:
-    anio_sel = st.selectbox(
-        "Año",
-        sorted(df_inv["Año"].dropna().unique()),
-        index=len(sorted(df_inv["Año"].dropna().unique())) - 1,
-        key="anio_inventario"
+    df_var["variacion_inventario_eur"] = (
+        df_var["inventario_cierre_eur"]
+        - df_var["inventario_cierre_eur"].shift(1)
     )
 
-with c2:
-    mes_sel = st.selectbox(
-        "Mes",
-        options=["Todos"] + sorted(df_inv["Mes"].dropna().unique()),
-        key="mes_inventario"
+    # Primer registro sin variación
+    df_var.loc[df_var.index[0], "variacion_inventario_eur"] = 0
+
+    # Persistir variación recalculada
+    df_inv.update(df_var)
+    df_inv.to_csv(INVENTARIO_FILE, index=False)
+
+    df_var["Mes"] = df_var["mes"].map(MESES_ES)
+
+    st.dataframe(
+        df_var[[
+            "anio",
+            "Mes",
+            "inventario_cierre_eur",
+            "variacion_inventario_eur"
+        ]].rename(columns={
+            "anio": "Año",
+            "inventario_cierre_eur": "Inventario cierre (€)",
+            "variacion_inventario_eur": "Variación (€)"
+        }),
+        hide_index=True,
+        use_container_width=True
     )
 
-# -------------------------
-# FILTRADO REAL (SIN RECONSTRUIR)
-# -------------------------
-df_filtrado = df_inv[df_inv["Año"] == anio_sel]
+# =====================================================
+# BLOQUE 4 — INVENTARIO MENSUAL (CSV CANÓNICO)
+# =====================================================
+st.divider()
+st.subheader("Inventario mensual (estructura de cálculo)")
 
-if mes_sel != "Todos":
-    df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_sel]
-
-# -------------------------
-# TABLA
-# -------------------------
-st.dataframe(
-    df_filtrado.sort_values("Fecha registro"),
-    hide_index=True,
-    use_container_width=True
+st.caption(
+    "Este bloque representa exactamente los datos utilizados por EBITDA. "
+    "No se edita manualmente."
 )
 
-# -------------------------
-# MÉTRICA CORRECTA
-# -------------------------
-if not df_filtrado.empty:
-    valor_actual = df_filtrado.iloc[-1]["Inventario (€)"]
-    st.metric(
-        "Inventario vigente (€)",
-        f"{valor_actual:,.2f} €"
+if not df_inv.empty:
+
+    df_csv = df_inv.sort_values(["anio", "mes"]).copy()
+    df_csv["Mes"] = df_csv["mes"].map(MESES_ES)
+
+    st.dataframe(
+        df_csv[[
+            "anio",
+            "Mes",
+            "inventario_cierre_eur",
+            "variacion_inventario_eur",
+            "fecha_actualizacion"
+        ]].rename(columns={
+            "anio": "Año",
+            "inventario_cierre_eur": "Inventario cierre (€)",
+            "variacion_inventario_eur": "Variación inventario (€)",
+            "fecha_actualizacion": "Última actualización"
+        }),
+        hide_index=True,
+        use_container_width=True
     )
