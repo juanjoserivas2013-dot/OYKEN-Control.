@@ -28,8 +28,8 @@ if "gastos" not in st.session_state:
                 "Mes",
                 "Concepto",
                 "Categoria",
-                "Tipo_Gasto",      # ⬅ ICANN
-                "Rol_Gasto",       # ⬅ ICANN
+                "Tipo_Gasto",   # ⬅ OYKEN
+                "Rol_Gasto",    # ⬅ OYKEN
                 "Coste (€)"
             ]
         )
@@ -52,9 +52,9 @@ CATEGORIAS = [
 ]
 
 # =====================================================
-# MATRIZ ICANN / OYKEN · CLASIFICACIÓN EXPERTA  ⬅ ICANN
+# MATRIZ OYKEN · CLASIFICACIÓN EXPERTA
 # =====================================================
-MATRIZ_CATEGORIAS_ICANN = {
+MATRIZ_CATEGORIAS_OYKEN = {
     "Alquiler": ("Fijo", "Estructural", "El alquiler existe independientemente de la venta."),
     "Suministros": ("Fijo", "Estructural", "Existe un consumo base imprescindible para operar."),
     "Mantenimiento": ("Fijo", "Estructural", "Mantiene la operatividad mínima del negocio."),
@@ -86,11 +86,11 @@ with st.form("registro_gastos", clear_on_submit=True):
         categoria = st.selectbox("Categoría", CATEGORIAS)
 
     # =================================================
-    # CLASIFICACIÓN ESTRUCTURAL SEGÚN MATRIZ ICANN ⬅ ICANN
+    # CLASIFICACIÓN ESTRUCTURAL SEGÚN MATRIZ OYKEN
     # =================================================
-    tipo_rec, rol_rec, justificacion = MATRIZ_CATEGORIAS_ICANN[categoria]
+    tipo_rec, rol_rec, justificacion = MATRIZ_CATEGORIAS_OYKEN[categoria]
 
-    st.markdown("**Clasificación estructural del gasto (ICANN / OYKEN)**")
+    st.markdown("**Clasificación estructural del gasto (OYKEN)**")
 
     c_tipo, c_rol = st.columns(2)
 
@@ -110,7 +110,7 @@ with st.form("registro_gastos", clear_on_submit=True):
 
     if tipo_gasto != tipo_rec or rol_gasto != rol_rec:
         st.warning(
-            f"Según ICANN/OYKEN esta categoría es **{tipo_rec} / {rol_rec}**.\n\n"
+            f"Según OYKEN esta categoría es **{tipo_rec} / {rol_rec}**.\n\n"
             f"Motivo: {justificacion}\n\n"
             f"Has decidido clasificarla como **{tipo_gasto} / {rol_gasto}**."
         )
@@ -144,8 +144,8 @@ with st.form("registro_gastos", clear_on_submit=True):
             "Mes": fecha.strftime("%Y-%m"),
             "Concepto": concepto,
             "Categoria": categoria,
-            "Tipo_Gasto": tipo_gasto,   # ⬅ ICANN
-            "Rol_Gasto": rol_gasto,     # ⬅ ICANN
+            "Tipo_Gasto": tipo_gasto,   # ⬅ OYKEN
+            "Rol_Gasto": rol_gasto,     # ⬅ OYKEN
             "Coste (€)": round(coste, 2)
         }
 
@@ -240,7 +240,10 @@ for mes in range(1, 13):
         continue
 
     gasto_mes = df_filtrado[df_filtrado["Fecha"].dt.month == mes]["Coste (€)"].sum()
-    datos_meses.append({"Mes": MESES_ES[mes], "Gastos del mes (€)": round(gasto_mes, 2)})
+    datos_meses.append({
+        "Mes": MESES_ES[mes],
+        "Gastos del mes (€)": round(gasto_mes, 2)
+    })
 
 tabla_gastos = pd.DataFrame(datos_meses)
 
