@@ -29,15 +29,17 @@ with c1:
     )
 
 with c2:
-    mes_sel = st.selectbox(
-        "Mes",
-        options=list(range(1, 13)),
-        format_func=lambda x: [
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        ][x - 1]
-        key=be_mes"
-    )
+MESES_ES = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+]
+
+mes_sel = st.selectbox(
+    "Mes",
+    options=list(range(1, 13)),
+    format_func=lambda x: MESES_ES[x - 1],
+    key="be_mes"
+)
 
 st.divider()
 
