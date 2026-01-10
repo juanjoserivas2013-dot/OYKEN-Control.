@@ -25,6 +25,7 @@ with c1:
         min_value=2020,
         max_value=2100,
         value=2026
+        key="be_anio"
     )
 
 with c2:
@@ -35,6 +36,7 @@ with c2:
             "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
             "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
         ][x - 1]
+        key=be_mes"
     )
 
 st.divider()
