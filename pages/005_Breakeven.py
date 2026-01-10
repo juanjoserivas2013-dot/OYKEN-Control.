@@ -83,6 +83,26 @@ row_rrhh = df_rrhh[
     (df_rrhh["anio"] == anio_sel) &
     (df_rrhh["mes"] == mes_sel)
 ]
+from pathlib import Path
+import pandas as pd
+
+RRHH_MENSUAL_FILE = Path("rrhh_mensual.csv")
+
+coste_rrhh = 0.0
+
+if RRHH_MENSUAL_FILE.exists():
+    df_rrhh = pd.read_csv(RRHH_MENSUAL_FILE)
+
+    # Filtrado temporal controlado por Breakeven
+    df_rrhh_filtrado = df_rrhh[
+        (df_rrhh["anio"] == anio_sel) &
+        ((df_rrhh["mes"] == mes_sel) if mes_sel != 0 else True)
+    ]
+
+    if not df_rrhh_filtrado.empty:
+        coste_rrhh = df_rrhh_filtrado["rrhh_total_eur"].sum()
+else:
+    coste_rrhh = 0.0
 
 if row_rrhh.empty:
     st.warning("No hay costes de RRHH para el período seleccionado.")
