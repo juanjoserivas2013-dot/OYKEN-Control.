@@ -79,9 +79,8 @@ df_ventas["ventas_total_eur"] = pd.to_numeric(
     df_ventas["ventas_total_eur"], errors="coerce"
 ).fillna(0)
 
-# ---------- Filtrar período ----------
-
-if mes_sel == "Todos los meses":
+# -------- Filtrar periodo --------
+if mes_sel == 0:  # Todos los meses
     row_compras = df_compras[
         df_compras["anio"] == int(anio_sel)
     ]
@@ -89,8 +88,9 @@ if mes_sel == "Todos los meses":
     row_ventas = df_ventas[
         df_ventas["anio"] == int(anio_sel)
     ]
+
 else:
-    mes_num = MESES_ES.index(mes_sel) + 1
+    mes_num = int(mes_sel)
 
     row_compras = df_compras[
         (df_compras["anio"] == int(anio_sel)) &
