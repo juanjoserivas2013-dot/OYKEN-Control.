@@ -218,6 +218,49 @@ st.metric(
 )
 
 # =====================================================
+# BLOQUE 4B · DESGLOSE ECONÓMICO RRHH
+# =====================================================
+
+st.divider()
+st.subheader("Desglose económico RRHH")
+st.caption("Detalle de nómina, Seguridad Social y coste empresa.")
+
+desglose = []
+
+for i, mes_nombre in enumerate(MESES_ES, start=1):
+
+    if mes_economico != 0 and i != mes_economico:
+        continue
+
+    total_nomina = 0.0
+    total_ss = 0.0
+
+    for _, row in df_puestos_econ.iterrows():
+        salario_mensual = row["Bruto anual (€)"] / 12
+        personas = row[mes_nombre]
+
+        nomina = salario_mensual * personas
+        ss = nomina * SS_EMPRESA
+
+        total_nomina += nomina
+        total_ss += ss
+
+    desglose.append({
+        "Mes": mes_nombre,
+        "Nómina (€)": round(total_nomina, 2),
+        "Seguridad Social (€)": round(total_ss, 2),
+        "Coste Empresa (€)": round(total_nomina + total_ss, 2)
+    })
+
+df_desglose = pd.DataFrame(desglose)
+
+st.dataframe(
+    df_desglose,
+    hide_index=True,
+    use_container_width=True
+)
+
+# =====================================================
 # BLOQUE 5 · CSV CANÓNICO MENSUAL
 # =====================================================
 
