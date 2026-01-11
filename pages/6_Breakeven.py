@@ -22,6 +22,21 @@ GASTOS_FILE = Path("gastos.csv")
 # SELECTOR TEMPORAL (AUTÓNOMO)
 # =====================================================
 
+MESES_ES = {
+    1: "Enero",
+    2: "Febrero",
+    3: "Marzo",
+    4: "Abril",
+    5: "Mayo",
+    6: "Junio",
+    7: "Julio",
+    8: "Agosto",
+    9: "Septiembre",
+    10: "Octubre",
+    11: "Noviembre",
+    12: "Diciembre"
+}
+
 c1, c2 = st.columns(2)
 
 with c1:
@@ -36,11 +51,8 @@ with c1:
 with c2:
     mes_sel = st.selectbox(
         "Mes",
-        options=list(range(1, 13)),
-        format_func=lambda x: [
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        ][x - 1]
+        options=[0] + list(MESES_ES.keys()),
+        format_func=lambda x: "Todos los meses" if x == 0 else MESES_ES[x]
     )
 
 st.divider()
@@ -79,15 +91,22 @@ df_ventas["ventas_total_eur"] = pd.to_numeric(
 ).fillna(0)
 
 # ---------- Filtrar período ----------
-row_compras = df_compras[
-    (df_compras["anio"] == int(anio_sel)) &
-    (df_compras["mes"] == int(mes_sel))
-]
-
-row_ventas = df_ventas[
-    (df_ventas["anio"] == int(anio_sel)) &
-    (df_ventas["mes"] == int(mes_sel))
-]
+if mes_sel == 0:
+    row_compras = df_compras[
+        df_compras["anio"] == int(anio_sel)
+    ]
+    row_ventas = df_ventas[
+        df_ventas["anio"] == int(anio_sel)
+    ]
+else:
+    row_compras = df_compras[
+        (df_compras["anio"] == int(anio_sel)) &
+        (df_compras["mes"] == mes_sel)
+    ]
+    row_ventas = df_ventas[
+        (df_ventas["anio"] == int(anio_sel)) &
+        (df_ventas["mes"] == mes_sel)
+    ]
 
 # ---------- Validación semántica ----------
 if row_compras.empty or row_ventas.empty:
