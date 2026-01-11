@@ -80,15 +80,27 @@ df_ventas["ventas_total_eur"] = pd.to_numeric(
 ).fillna(0)
 
 # ---------- Filtrar período ----------
-row_compras = df_compras[
-    (df_compras["anio"] == int(anio_sel)) &
-    (df_compras["mes"] == int(mes_sel))
-]
 
-row_ventas = df_ventas[
-    (df_ventas["anio"] == int(anio_sel)) &
-    (df_ventas["mes"] == int(mes_sel))
-]
+if mes_sel == "Todos los meses":
+    row_compras = df_compras[
+        df_compras["anio"] == int(anio_sel)
+    ]
+
+    row_ventas = df_ventas[
+        df_ventas["anio"] == int(anio_sel)
+    ]
+else:
+    mes_num = MESES_ES.index(mes_sel) + 1
+
+    row_compras = df_compras[
+        (df_compras["anio"] == int(anio_sel)) &
+        (df_compras["mes"] == mes_num)
+    ]
+
+    row_ventas = df_ventas[
+        (df_ventas["anio"] == int(anio_sel)) &
+        (df_ventas["mes"] == mes_num)
+    ]
 
 # ---------- Validación semántica ----------
 if row_compras.empty or row_ventas.empty:
