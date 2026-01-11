@@ -201,7 +201,6 @@ total_gastos_fijos = gastos_por_categoria["Coste (€)"].sum()
 costes_fijos_totales = coste_rrhh + total_gastos_fijos
 
 # ---------- VISUAL RESUMEN ----------
-st.markdown("### Costes Fijos Estructurales")
 
 st.metric(
     "Costes fijos totales (€)",
