@@ -166,10 +166,15 @@ df_rrhh["rrhh_total_eur"] = pd.to_numeric(
     df_rrhh["rrhh_total_eur"], errors="coerce"
 ).fillna(0)
 
-row_rrhh = df_rrhh[
-    (df_rrhh["anio"] == int(anio_sel)) &
-    (df_rrhh["mes"] == int(mes_sel))
-]
+if mes_sel == 0:  # Todos los meses
+    row_rrhh = df_rrhh[
+        df_rrhh["anio"] == int(anio_sel)
+    ]
+else:
+    row_rrhh = df_rrhh[
+        (df_rrhh["anio"] == int(anio_sel)) &
+        (df_rrhh["mes"] == int(mes_sel))
+    ]
 
 coste_rrhh = (
     float(row_rrhh["rrhh_total_eur"].sum())
