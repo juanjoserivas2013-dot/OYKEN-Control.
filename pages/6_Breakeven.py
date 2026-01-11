@@ -1,3 +1,50 @@
+import streamlit as st
+import pandas as pd
+from pathlib import Path
+
+# =====================================================
+# CABECERA
+# =====================================================
+
+st.subheader("OYKEN · Breakeven Operativo")
+st.caption("Punto de equilibrio estructural del negocio")
+st.divider()
+
+# =====================================================
+# ARCHIVOS CANÓNICOS
+# =====================================================
+
+COSTE_PRODUCTO_FILE = Path("coste_producto.csv")
+RRHH_FILE = Path("rrhh_mensual.csv")
+GASTOS_FILE = Path("gastos.csv")
+
+# =====================================================
+# SELECTOR TEMPORAL (AUTÓNOMO)
+# =====================================================
+
+c1, c2 = st.columns(2)
+
+with c1:
+    anio_sel = st.number_input(
+        "Año",
+        min_value=2020,
+        max_value=2100,
+        value=2026,
+        step=1
+    )
+
+with c2:
+    mes_sel = st.selectbox(
+        "Mes",
+        options=list(range(1, 13)),
+        format_func=lambda x: [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ][x - 1]
+    )
+
+st.divider()
+
 # =====================================================
 # MARGEN BRUTO (DESDE COMPRAS + VENTAS)
 # =====================================================
