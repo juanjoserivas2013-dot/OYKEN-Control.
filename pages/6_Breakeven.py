@@ -146,3 +146,93 @@ st.caption(
 )
 
 st.divider()
+
+# =====================================================
+# COSTES FIJOS ESTRUCTURALES
+# =====================================================
+
+st.markdown("### Costes fijos estructurales")
+
+# ---------- RRHH ----------
+if not RRHH_FILE.exists():
+    st.error("No existen datos de Recursos Humanos.")
+    st.stop()
+
+df_rrhh = pd.read_csv(RRHH_FILE)
+
+df_rrhh["anio"] = df_rrhh["anio"].astype(int)
+df_rrhh["mes"] = df_rrhh["mes"].astype(int)
+df_rrhh["rrhh_total_eur"] = pd.to_numeric(
+    df_rrhh["rrhh_total_eur"], errors="coerce"
+).fillna(0)
+
+row_rrhh = df_rrhh[
+    (df_rrhh["anio"] == int(anio_sel)) &
+    (df_rrhh["mes"] == int(mes_sel))
+]
+
+coste_rrhh = (
+    float(row_rrhh["rrhh_total_eur"].sum())
+    if not row_rrhh.empty else 0.0
+)
+
+# ---------- GASTOS FIJOS ----------
+if not GASTOS_FILE.exists():
+    st.error("No existen gastos registrados.")
+    st.stop()
+
+df_gastos = pd.read_csv(GASTOS_FILE)
+
+df_gastos["Coste (€)"] = pd.to_numeric(
+    df_gastos["Coste (€)"], errors="coerce"
+).fillna(0)
+
+# Solo gastos fijos estructurales
+gastos_fijos = df_gastos[
+    (df_gastos["Tipo_Gasto"] == "Fijo") &
+    (df_gastos["Rol_Gasto"] == "Estructural")
+]
+
+gastos_por_categoria = (
+    gastos_fijos
+    .groupby("Categoria", as_index=False)["Coste (€)"]
+    .sum()
+)
+
+total_gastos_fijos = gastos_por_categoria["Coste (€)"].sum()
+
+# ---------- TOTAL COSTES FIJOS ----------
+costes_fijos_totales = coste_rrhh + total_gastos_fijos
+
+# ---------- VISUAL RESUMEN ----------
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.metric("RRHH (€)", f"{coste_rrhh:,.2f}")
+with c2:
+    st.metric("Otros gastos fijos (€)", f"{total_gastos_fijos:,.2f}")
+with c3:
+    st.metric("Costes fijos totales (€)", f"{costes_fijos_totales:,.2f}")
+
+st.caption(
+    "Incluye RRHH + gastos fijos estructurales. "
+    "No incluye costes variables ni coste de producto."
+)
+
+# ---------- DESGLOSE AUDITABLE ----------
+st.markdown("#### Desglose de costes fijos")
+
+st.dataframe(
+    pd.concat([
+        pd.DataFrame([{
+            "Concepto": "Recursos Humanos",
+            "Coste (€)": coste_rrhh
+        }]),
+        gastos_por_categoria.rename(
+            columns={"Categoria": "Concepto"}
+        )
+    ]),
+    hide_index=True,
+    use_container_width=True
+)
+
+st.divider()
