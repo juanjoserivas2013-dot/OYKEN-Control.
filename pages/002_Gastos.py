@@ -176,6 +176,7 @@ MATRIZ_CATEGORIAS_OYKEN = {
     "Innovación / pruebas": ("Variable", "No estructural", "Riesgo controlado.")
 }
 
+
 # =====================================================
 # FORMULARIO
 # =====================================================
@@ -193,24 +194,6 @@ with st.form("registro_gastos", clear_on_submit=True):
     with col2:
         categoria = st.selectbox("Categoría", CATEGORIAS)
 
-    # 🔒 BLOQUEO DE CATEGORÍAS RRHH (OYKEN)
-CATEGORIAS_RRHH_BLOQUEADAS = [
-    "Salarios base",
-    "Seguridad Social empresa",
-    "Turnos mínimos",
-    "Horas extra",
-    "Eventuales",
-    "Sustituciones"
-]
-
-if categoria in CATEGORIAS_RRHH_BLOQUEADAS:
-    st.info(
-        "Este tipo de gasto corresponde al **coste humano del negocio** y se "
-        "gestiona automáticamente desde el módulo **Recursos Humanos**.\n\n"
-        "Para evitar duplicidades y errores en el Breakeven, "
-        "no puede registrarse manualmente aquí."
-    )
-    
     # =================================================
     # CLASIFICACIÓN ESTRUCTURAL SEGÚN MATRIZ OYKEN
     # =================================================
@@ -253,10 +236,7 @@ if categoria in CATEGORIAS_RRHH_BLOQUEADAS:
         format="%.2f"
     )
 
-    submitted = st.form_submit_button(
-        "Registrar gasto",
-        disabled=rrhh_bloqueado
-    )
+    submitted = st.form_submit_button("Registrar gasto")
 
     if submitted:
 
