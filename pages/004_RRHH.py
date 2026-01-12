@@ -128,13 +128,53 @@ else:
 st.divider()
 
 # =====================================================
-# BLOQUE 2 · COSTE DE PERSONAL (NÓMINA)
+# BLOQUE · COSTE DE PERSONAL — NÓMINA
 # =====================================================
 
 st.subheader("Coste de personal — Nómina (económico)")
 st.caption("Cálculo económico aislado de la planificación.")
 
 SS_EMPRESA = 0.33
+
+datos = []
+
+for i, mes_nombre in enumerate(MESES, start=1):
+
+    if mes_economico != 0 and i != mes_economico:
+        continue
+
+    total_nomina = 0.0
+    total_ss = 0.0
+
+    for _, row in df_puestos_anio.iterrows():
+        personas = row[mes_nombre]
+        salario_mensual = row["Bruto anual (€)"] / 12
+
+        nomina = salario_mensual * personas
+        ss = nomina * SS_EMPRESA
+
+        total_nomina += nomina
+        total_ss += ss
+
+    datos.append({
+        "Mes": mes_nombre,
+        "Nómina (€)": round(total_nomina, 2),
+        "Seguridad Social (€)": round(total_ss, 2),
+        "Coste Empresa (€)": round(total_nomina + total_ss, 2)
+    })
+
+df_nomina = pd.DataFrame(datos)
+
+st.dataframe(
+    df_nomina,
+    hide_index=True,
+    use_container_width=True
+)
+
+st.metric(
+    "Coste RRHH período seleccionado",
+    f"{df_nomina['Coste Empresa (€)'].sum():,.2f} €"
+)
 
 # =====================================================
 # BLOQUE 2B · MAPA DE MESES
