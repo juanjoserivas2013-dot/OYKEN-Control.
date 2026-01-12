@@ -144,11 +144,7 @@ st.divider()
 
 st.markdown("### Costes fijos estructurales")
 
-# ---------- RRHH ----------
-if not RRHH_FILE.exists():
-    st.error("No existen datos de Recursos Humanos.")
-    st.stop()
-
+# ---------- RRHH (SOLO ESTRUCTURAL MÍNIMO) ----------
 df_rrhh = pd.read_csv(RRHH_FILE)
 
 df_rrhh["anio"] = df_rrhh["anio"].astype(int)
@@ -157,7 +153,12 @@ df_rrhh["rrhh_total_eur"] = pd.to_numeric(
     df_rrhh["rrhh_total_eur"], errors="coerce"
 ).fillna(0)
 
-if mes_sel == 0:  # Todos los meses
+# 🔒 Filtro OYKEN: solo RRHH fijo estructural
+df_rrhh = df_rrhh[
+    df_rrhh["rol_rrhh"] == "Estructural mínimo"
+]
+
+if mes_sel == 0:
     row_rrhh = df_rrhh[
         df_rrhh["anio"] == int(anio_sel)
     ]
