@@ -128,7 +128,7 @@ else:
 st.divider()
 
 # =====================================================
-# BLOQUE · COSTE DE PERSONAL — NÓMINA
+# BLOQUE 2 · COSTE DE PERSONAL (NÓMINA)
 # =====================================================
 
 st.subheader("Coste de personal — Nómina (económico)")
@@ -136,45 +136,44 @@ st.caption("Cálculo económico aislado de la planificación.")
 
 SS_EMPRESA = 0.33
 
-datos = []
+if df_puestos_anio.empty:
+    st.info("No hay estructura de puestos para calcular nómina.")
+else:
+    datos_nomina = []
 
-for i, mes_nombre in enumerate(MESES, start=1):
+    for mes in MESES:
+        total_nomina = 0.0
+        total_ss = 0.0
 
-    if mes_economico != 0 and i != mes_rrhh_economico:
-        continue
+        for _, row in df_puestos_anio.iterrows():
+            salario_mensual = row["Bruto anual (€)"] / 12
+            personas = row.get(mes, 0)
 
-    total_nomina = 0.0
-    total_ss = 0.0
+            nomina = salario_mensual * personas
+            ss = nomina * SS_EMPRESA
 
-    for _, row in df_puestos_anio.iterrows():
-        personas = row[mes_nombre]
-        salario_mensual = row["Bruto anual (€)"] / 12
+            total_nomina += nomina
+            total_ss += ss
 
-        nomina = salario_mensual * personas
-        ss = nomina * SS_EMPRESA
+        datos_nomina.append({
+            "Mes": mes,
+            "Nómina (€)": round(total_nomina, 2),
+            "Seguridad Social (€)": round(total_ss, 2),
+            "Coste Empresa (€)": round(total_nomina + total_ss, 2)
+        })
 
-        total_nomina += nomina
-        total_ss += ss
+    df_nomina = pd.DataFrame(datos_nomina)
 
-    datos.append({
-        "Mes": mes_nombre,
-        "Nómina (€)": round(total_nomina, 2),
-        "Seguridad Social (€)": round(total_ss, 2),
-        "Coste Empresa (€)": round(total_nomina + total_ss, 2)
-    })
+    st.dataframe(
+        df_nomina,
+        hide_index=True,
+        use_container_width=True
+    )
 
-df_nomina = pd.DataFrame(datos)
-
-st.dataframe(
-    df_nomina,
-    hide_index=True,
-    use_container_width=True
-)
-
-st.metric(
-    "Coste RRHH período seleccionado",
-    f"{df_nomina['Coste Empresa (€)'].sum():,.2f} €"
-)
+    st.metric(
+        "Coste total RRHH anual (€)",
+        f"{df_nomina['Coste Empresa (€)'].sum():,.2f} €"
+    )
 
 # =====================================================
 # BLOQUE 2B · MAPA DE MESES
