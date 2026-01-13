@@ -52,8 +52,8 @@ def guardar_puesto(registro: dict):
 
 anio_activo = st.selectbox(
     "Año activo",
-    list(range(2022, 2031)),
-    index=list(range(2022, 2031)).index(date.today().year)
+    list(range(2024, 2031)),
+    index=list(range(2024, 2031)).index(date.today().year)
   
 )
 
