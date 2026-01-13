@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 
+
 # =====================================================
 # CONFIGURACIÓN
 # =====================================================
@@ -51,7 +52,8 @@ def guardar_puesto(registro: dict):
 anio_activo = st.selectbox(
     "Año activo",
     list(range(2022, 2031)),
-    index=list(range(2022, 2031)).index(2025)
+    index=list(range(2022, 2031)).index(date.today().year)
+  
 )
 
 df_puestos = cargar_puestos()
