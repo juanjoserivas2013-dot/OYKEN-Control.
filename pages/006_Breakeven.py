@@ -324,8 +324,7 @@ else:
             "El margen de contribución es ≤ 0. "
             "La estructura no se sostiene con el nivel actual de costes variables."
         )
-
-    
+ 
 import calendar
 
 # =====================================================
