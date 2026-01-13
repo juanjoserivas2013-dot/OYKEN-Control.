@@ -173,10 +173,10 @@ with st.form("registro_gastos", clear_on_submit=True):
     c_tipo, c_rol = st.columns(2)
 
     with c_tipo:
-    st.info(f"**Tipo de gasto:** {tipo_rec}")
+        st.info(f"**Tipo de gasto:** {tipo_rec}")
 
     with c_rol:
-    st.info(f"**Rol del gasto:** {rol_rec}")
+        st.info(f"**Rol del gasto:** {rol_rec}")
 
 
     concepto = st.text_input(
