@@ -282,12 +282,12 @@ gastos_variables = df_gastos[
 # Filtrar por periodo
 if mes_sel == 0:
     gastos_variables_periodo = gastos_variables[
-        gastos_variables["Año"] == int(anio_sel)
+        gastos_variables["anio"] == int(anio_sel)
     ]
 else:
     gastos_variables_periodo = gastos_variables[
-        (gastos_variables["Año"] == int(anio_sel)) &
-        (gastos_variables["Mes"] == int(mes_sel))
+        (gastos_variables["anio"] == int(anio_sel)) &
+        (gastos_variables["mes"] == int(mes_sel))
     ]
 
 gastos_variables_total = gastos_variables_periodo["Coste (€)"].sum()
