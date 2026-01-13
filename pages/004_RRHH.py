@@ -131,6 +131,44 @@ else:
 st.divider()
 
 # =====================================================
+# CORRECCIÓN DE ERRORES · ESTRUCTURA DE PUESTOS
+# =====================================================
+
+st.divider()
+st.subheader("Corrección de errores · Estructura de puestos")
+
+if not df_puestos_anio.empty:
+
+    idx = st.selectbox(
+        "Selecciona una estructura de puesto",
+        df_puestos_anio.index,
+        format_func=lambda i: (
+            f"{df_puestos_anio.loc[i, 'Puesto']} · "
+            f"{df_puestos_anio.loc[i, 'Rol_RRHH']} · "
+            f"{df_puestos_anio.loc[i, 'Año']}"
+        )
+    )
+
+    if st.button("Eliminar estructura de puesto"):
+
+        df_todos = cargar_puestos()
+
+        df_todos = (
+            df_todos
+            .drop(idx)
+            .reset_index(drop=True)
+        )
+
+        df_todos.to_csv(PUESTOS_FILE, index=False)
+
+        st.success("Estructura de puesto eliminada correctamente.")
+        st.rerun()
+
+else:
+    st.info("No hay estructuras de puestos para eliminar en este año.")
+
+
+# =====================================================
 # BLOQUE 2 · COSTE DE PERSONAL (NÓMINA)
 # =====================================================
 
