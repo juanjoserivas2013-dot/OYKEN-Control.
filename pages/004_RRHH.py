@@ -197,9 +197,9 @@ if not df_puestos_anio.empty:
 
         if periodo == "Año completo":
             total_personas = sum(row[mes] for mes in MESES)
-            return salario_mensual * total_personas
+            return salario_mensual * total_personas * (1 + SS_EMPRESA)
         else:
-            return salario_mensual * row[periodo]
+            return salario_mensual * row[periodo] * (1 + SS_EMPRESA)
 
     df_calc = df_puestos_anio.copy()
     df_calc["Coste"] = df_calc.apply(
