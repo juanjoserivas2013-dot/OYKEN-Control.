@@ -317,6 +317,7 @@ else:
     st.caption(
         f"Contribución absoluta del período: "
         f"{contribucion_eur:,.2f} €"
+        f"Fórmula: Ventas - (Coste de Producto+ gastos variables estructurales)"
     )
 
     if margen_contribucion <= 0:
