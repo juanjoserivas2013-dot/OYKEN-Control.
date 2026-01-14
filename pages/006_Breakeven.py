@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
+import calendar
 
 # =====================================================
 # CABECERA
@@ -349,14 +350,11 @@ st.caption(
     f"Fórmula: Ventas - (Coste de producto + Gastos variables estructurales + RRHH variable)"
 )
 
-
     if margen_contribucion <= 0:
         st.warning(
             "El margen de contribución es ≤ 0. "
             "La estructura no se sostiene con el nivel actual de costes variables."
         )
- 
-import calendar
 
 # =====================================================
 # BREAKEVEN OPERATIVO DIARIO
