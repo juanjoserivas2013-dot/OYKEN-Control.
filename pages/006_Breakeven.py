@@ -298,8 +298,36 @@ else:
 
 gastos_variables_total = gastos_variables_periodo["Coste (€)"].sum()
 
+# ---------- RRHH variable / refuerzos ----------
+df_rrhh_var = pd.read_csv(RRHH_FILE)
+
+df_rrhh_var["anio"] = df_rrhh_var["anio"].astype(int)
+df_rrhh_var["mes"] = df_rrhh_var["mes"].astype(int)
+
+rrhh_variable = df_rrhh_var[
+    df_rrhh_var["Rol_RRHH"] == "Refuerzo operativo"
+]
+
+if mes_sel == 0:
+    rrhh_variable_periodo = rrhh_variable[
+        rrhh_variable["anio"] == int(anio_sel)
+    ]
+else:
+    rrhh_variable_periodo = rrhh_variable[
+        (rrhh_variable["anio"] == int(anio_sel)) &
+        (rrhh_variable["mes"] == int(mes_sel))
+    ]
+
+rrhh_variable_total = rrhh_variable_periodo["Coste_Total_Empresa (€)"].sum()
+
+
 # ---------- Costes variables reales ----------
-costes_variables_reales = compras + gastos_variables_total
+costes_variables_reales = (
+    compras +
+    gastos_variables_total +
+    rrhh_variable_total
+)
+
 
 # ---------- Contribución ----------
 contribucion_eur = ventas - costes_variables_reales
@@ -315,11 +343,12 @@ else:
         f"{margen_contribucion:.2%}"
     )
 
-    st.caption(
-        f"Contribución absoluta del período: "
-        f"{contribucion_eur:,.2f} €"
-        f"Fórmula: Ventas - (Coste de Producto+ gastos variables estructurales)"
-    )
+st.caption(
+    f"Contribución absoluta del período: "
+    f"{contribucion_eur:,.2f} € · "
+    f"Fórmula: Ventas - (Coste de producto + Gastos variables estructurales + RRHH variable)"
+)
+
 
     if margen_contribucion <= 0:
         st.warning(
