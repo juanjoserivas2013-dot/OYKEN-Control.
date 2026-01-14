@@ -305,7 +305,8 @@ st.divider()
 st.subheader("Margen de contribución real")
 st.caption(
     "Capacidad real del negocio para cubrir la estructura fija, "
-    "una vez descontados todos los costes variables reales."
+    "una vez descontados los costes variables reales del negocio "
+    "(coste de producto + gastos variables estructurales)."
 )
 
 # ---------- Gastos variables estructurales ----------
@@ -314,7 +315,7 @@ gastos_variables = df_gastos[
     (df_gastos["Rol_Gasto"] == "Estructural")
 ]
 
-# ---------- Filtrar gastos por periodo (OYKEN) ----------
+# ---------- Filtrar por periodo (OYKEN) ----------
 if mes_sel == 0:
     gastos_variables_periodo = gastos_variables[
         gastos_variables["Mes"].str.startswith(str(anio_sel))
@@ -327,43 +328,14 @@ else:
 
 gastos_variables_total = gastos_variables_periodo["Coste (€)"].sum()
 
-# ---------- RRHH variable / refuerzos ----------
-df_rrhh_var = pd.read_csv(RRHH_FILE)
-
-df_rrhh_var["anio"] = df_rrhh_var["anio"].astype(int)
-df_rrhh_var["mes"] = df_rrhh_var["mes"].astype(int)
-
-rrhh_variable = df_rrhh_var[
-    df_rrhh_var["Rol_RRHH"] == "Refuerzo operativo"
-]
-
-if mes_sel == 0:
-    rrhh_variable_periodo = rrhh_variable[
-        rrhh_variable["anio"] == int(anio_sel)
-    ]
-else:
-    rrhh_variable_periodo = rrhh_variable[
-        (rrhh_variable["anio"] == int(anio_sel)) &
-        (rrhh_variable["mes"] == int(mes_sel))
-    ]
-
-rrhh_variable_total = rrhh_variable_periodo["Coste_Total_Empresa (€)"].sum()
-
 # ---------- Costes variables reales ----------
-costes_variables_reales = (
-    compras +
-    gastos_variables_total +
-    rrhh_variable_total
-)
+costes_variables_reales = compras + gastos_variables_total
 
 # ---------- Contribución ----------
 contribucion_eur = ventas - costes_variables_reales
 
 if ventas <= 0:
-    st.warning(
-        "Las ventas del período son 0 €. "
-        "No se puede calcular la contribución."
-    )
+    st.warning("Las ventas del período son 0 €. No se puede calcular la contribución.")
 else:
     margen_contribucion = contribucion_eur / ventas
 
@@ -373,10 +345,8 @@ else:
     )
 
     st.caption(
-        f"Contribución absoluta del período: "
-        f"{contribucion_eur:,.2f} € · "
-        f"Fórmula: Ventas - "
-        f"(Coste de producto + Gastos variables estructurales + RRHH variable)"
+        f"Contribución absoluta del período: {contribucion_eur:,.2f} € · "
+        f"Fórmula: Ventas − (Coste de producto + gastos variables estructurales)"
     )
 
     if margen_contribucion <= 0:
@@ -384,4 +354,3 @@ else:
             "El margen de contribución es ≤ 0. "
             "La estructura no se sostiene con el nivel actual de costes variables."
         )
-
