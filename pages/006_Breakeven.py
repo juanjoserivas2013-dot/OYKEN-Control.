@@ -136,7 +136,7 @@ st.metric("Margen bruto", f"{margen_bruto:.2%}")
 st.caption(
     "Fuente: Compras y Ventas mensuales · "
     "Cálculo directo (sin CSV intermedio)"
-    "1-(C.Producto/Ventas)"
+    "1 - (C.Producto/Ventas)"
 )
 
 st.divider()
