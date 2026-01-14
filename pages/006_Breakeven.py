@@ -421,3 +421,30 @@ st.dataframe(
     hide_index=True,
     use_container_width=True
 )
+# =====================================================
+# BREAKEVEN REAL (OYKEN)
+# =====================================================
+
+st.divider()
+st.subheader("Breakeven real")
+st.caption(
+    "Nivel de ventas necesario para que el resultado sea 0 €, "
+    "utilizando el margen de contribución real del negocio."
+)
+
+if margen_contribucion <= 0:
+    st.error(
+        "El margen de contribución real es ≤ 0. "
+        "No existe un breakeven sostenible con la estructura actual."
+    )
+else:
+    breakeven_real = costes_fijos_totales / margen_contribucion
+
+    st.metric(
+        "Ventas necesarias (breakeven real)",
+        f"{breakeven_real:,.2f} €"
+    )
+
+    st.caption(
+        "Fórmula: Costes fijos estructurales ÷ Margen de contribución real"
+    )
