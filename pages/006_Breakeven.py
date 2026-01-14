@@ -305,18 +305,20 @@ else:
 st.divider()
 st.subheader("Margen de contribución real")
 st.caption(
-    "Capacidad real del negocio para cubrir la estructura fija, "
-    "una vez descontados los costes variables reales del negocio "
-    "(coste de producto + gastos variables estructurales)."
+    "Capacidad real del negocio para cubrir la estructura fija mínima, "
+    "una vez descontados todos los costes variables reales "
+    "(producto, gastos variables y RRHH variables)."
 )
 
-# ---------- Gastos variables estructurales ----------
+# -----------------------------------------------------
+# GASTOS VARIABLES ESTRUCTURALES
+# -----------------------------------------------------
+
 gastos_variables = df_gastos[
     (df_gastos["Tipo_Gasto"] == "Variable") &
     (df_gastos["Rol_Gasto"] == "Estructural")
 ]
 
-# ---------- Filtrar por periodo (OYKEN) ----------
 if mes_sel == 0:
     gastos_variables_periodo = gastos_variables[
         gastos_variables["Mes"].str.startswith(str(anio_sel))
@@ -329,20 +331,45 @@ else:
 
 gastos_variables_total = gastos_variables_periodo["Coste (€)"].sum()
 
-# ---------- Costes variables reales ----------
+# -----------------------------------------------------
+# RRHH VARIABLES (ESTRUCTURAL AMPLIABLE + REFUERZO OPERATIVO)
+# -----------------------------------------------------
+
+rrhh_variables = df_rrhh[
+    df_rrhh["Rol_RRHH"].isin([
+        "Estructural ampliable",
+        "Refuerzo operativo"
+    ])
+]
+
+if mes_sel == 0:
+    rrhh_variables_periodo = rrhh_variables[
+        rrhh_variables["Mes"].str.startswith(str(anio_sel))
+    ]
+else:
+    rrhh_variables_periodo = rrhh_variables[
+        rrhh_variables["Mes"] == mes_clave
+    ]
+
+rrhh_variables_total = rrhh_variables_periodo["Coste Empresa (€)"].sum()
+
+# -----------------------------------------------------
+# COSTES VARIABLES REALES
+# -----------------------------------------------------
+
 costes_variables_reales = (
     compras
     + gastos_variables_total
-    + RRHH estructural ampliable
-    + RRHH refuerzo operativo
+    + rrhh_variables_total
 )
 
-# ---------- Contribución ----------
+# -----------------------------------------------------
+# CONTRIBUCIÓN Y MARGEN
+# -----------------------------------------------------
+
 contribucion_eur = ventas - costes_variables_reales
 
-if ventas <= 0:
-    st.warning("Las ventas del período son 0 €. No se puede calcular la contribución.")
-else:
+if ventas > 0:
     margen_contribucion = contribucion_eur / ventas
 
     st.metric(
@@ -352,11 +379,5 @@ else:
 
     st.caption(
         f"Contribución absoluta del período: {contribucion_eur:,.2f} € · "
-        f"Fórmula: Ventas − (Coste de producto + gastos variables estructurales)"
+        "Fórmula: Ventas − (Producto + Gastos variables + RRHH variables)"
     )
-
-    if margen_contribucion <= 0:
-        st.warning(
-            "El margen de contribución es ≤ 0. "
-            "La estructura no se sostiene con el nivel actual de costes variables."
-        )
