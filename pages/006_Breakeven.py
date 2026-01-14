@@ -502,3 +502,91 @@ st.metric(
 st.caption(
     "Comprobación: Ventas − Costes variables − Costes fijos = 0"
 )
+
+# =====================================================
+# BREAKEVEN · OPERATIVO vs REAL (BRECHA OPERATIVA)
+# =====================================================
+
+st.divider()
+st.subheader("Breakeven · Operativo vs Real")
+st.caption(
+    "Comparativa entre el punto de equilibrio teórico del modelo "
+    "y el punto de equilibrio real según la operación actual del negocio."
+)
+
+# =========================
+# BLOQUE MENSUAL
+# =========================
+
+st.markdown("### Comparativa mensual")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.metric(
+        "Breakeven operativo",
+        f"{breakeven_eur:,.2f} €",
+        help="Cubre únicamente estructura fija con margen bruto."
+    )
+
+with c2:
+    st.metric(
+        "Breakeven real",
+        f"{breakeven_real:,.2f} €",
+        help="Cubre estructura fija con margen de contribución real."
+    )
+
+with c3:
+    brecha_mensual = breakeven_real - breakeven_eur
+
+    st.metric(
+        "Brecha operativa",
+        f"{brecha_mensual:,.2f} €",
+        help="Impacto económico de la operación real sobre el modelo teórico."
+    )
+
+st.caption(
+    "La brecha operativa mensual representa el sobreesfuerzo de ventas "
+    "necesario debido a costes variables reales (RRHH variable y otros gastos)."
+)
+
+# =========================
+# BLOQUE DIARIO
+# =========================
+
+st.divider()
+st.markdown("### Comparativa diaria")
+
+if mes_sel == 0:
+    st.info(
+        "La comparativa diaria se muestra solo cuando se selecciona "
+        "un mes concreto."
+    )
+else:
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.metric(
+            "Breakeven operativo diario",
+            f"{breakeven_diario:,.2f} € / día"
+        )
+
+    with c2:
+        st.metric(
+            "Breakeven real diario",
+            f"{breakeven_real_diario:,.2f} € / día"
+        )
+
+    with c3:
+        brecha_diaria = breakeven_real_diario - breakeven_diario
+
+        st.metric(
+            "Brecha operativa diaria",
+            f"{brecha_diaria:,.2f} € / día"
+        )
+
+    st.caption(
+        "La brecha diaria muestra cuánto más debe facturar el negocio cada día "
+        "para compensar la ineficiencia operativa frente al modelo ideal."
+    )
+
