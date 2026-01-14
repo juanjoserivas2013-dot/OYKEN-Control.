@@ -330,7 +330,11 @@ else:
 gastos_variables_total = gastos_variables_periodo["Coste (€)"].sum()
 
 # ---------- Costes variables reales ----------
-costes_variables_reales = compras + gastos_variables_total
+costes_variables_reales = (
+    compras
+    + gastos_variables_total
+    + rrhh_variable
+)
 
 # ---------- Contribución ----------
 contribucion_eur = ventas - costes_variables_reales
