@@ -55,6 +55,32 @@ df_i["variacion_inventario_eur"] = pd.to_numeric(
 ).fillna(0)
 
 # =========================
+# BREAKEVEN · LECTURA CANÓNICA
+# =========================
+
+BREAKEVEN_RESUMEN_FILE = Path("breakeven_resumen.csv")
+
+if not BREAKEVEN_RESUMEN_FILE.exists():
+    st.warning("No existe resumen de Breakeven. Ejecuta primero la página de Breakeven.")
+    st.stop()
+
+df_be = pd.read_csv(BREAKEVEN_RESUMEN_FILE)
+
+df_be["anio"] = pd.to_numeric(df_be["anio"], errors="coerce")
+df_be["mes"] = pd.to_numeric(df_be["mes"], errors="coerce")
+
+df_be_sel = df_be[
+    (df_be["anio"] == anio_sel) &
+    (df_be["mes"] == mes_sel)
+]
+
+if df_be_sel.empty:
+    st.warning("No hay datos de Breakeven para el período seleccionado.")
+    st.stop()
+
+be = df_be_sel.iloc[0]
+
+# =========================
 # SELECTORES
 # =========================
 anios_disponibles = sorted(
@@ -190,3 +216,29 @@ st.dataframe(
     hide_index=True,
     use_container_width=True
 )
+
+st.divider()
+st.subheader("Referencias económicas del período")
+
+c1, c2 = st.columns(2)
+
+with c1:
+    st.metric(
+        "Ventas mínimas sostenibles",
+        f"{be['breakeven_real_eur']:,.2f} €"
+    )
+    st.metric(
+        "Brecha operativa",
+        f"{be['brecha_operativa_eur']:,.2f} €"
+    )
+
+with c2:
+    st.metric(
+        "Costes fijos estructurales",
+        f"{be['costes_fijos_totales_eur']:,.2f} €"
+    )
+    st.metric(
+        "Margen de contribución real",
+        f"{be['margen_contribucion_real_pct']:.2%}"
+    )
+
