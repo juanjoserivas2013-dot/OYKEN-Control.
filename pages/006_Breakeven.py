@@ -590,3 +590,83 @@ else:
         "para compensar la ineficiencia operativa frente al modelo ideal."
     )
 
+# =====================================================
+# PERSISTENCIA · BREAKEVEN RESUMEN (CANÓNICO)
+# =====================================================
+
+from datetime import datetime
+
+BREAKEVEN_RESUMEN_FILE = Path("breakeven_resumen.csv")
+
+# 1) Crear archivo si no existe
+if not BREAKEVEN_RESUMEN_FILE.exists():
+    pd.DataFrame(columns=[
+        "anio",
+        "mes",
+        "costes_fijos_totales_eur",
+        "costes_variables_reales_eur",
+        "margen_bruto_pct",
+        "margen_contribucion_real_pct",
+        "breakeven_operativo_eur",
+        "breakeven_real_eur",
+        "brecha_operativa_eur",
+        "dias_periodo",
+        "breakeven_operativo_diario_eur",
+        "breakeven_real_diario_eur",
+        "brecha_operativa_diaria_eur",
+        "resultado_check_eur",
+        "fecha_calculo",
+        "version_modelo"
+    ]).to_csv(BREAKEVEN_RESUMEN_FILE, index=False)
+
+# 2) Preparar valores diarios (solo si hay mes concreto)
+if mes_sel != 0:
+    dias_periodo = calendar.monthrange(int(anio_sel), int(mes_sel))[1]
+    be_op_diario = breakeven_diario
+    be_real_diario = breakeven_real_diario
+    brecha_diaria_val = brecha_diaria
+else:
+    dias_periodo = 0
+    be_op_diario = 0.0
+    be_real_diario = 0.0
+    brecha_diaria_val = 0.0
+
+# 3) Construir fila de resumen
+row_resumen = {
+    "anio": int(anio_sel),
+    "mes": int(mes_sel),
+    "costes_fijos_totales_eur": float(costes_fijos_totales),
+    "costes_variables_reales_eur": float(costes_variables_reales),
+    "margen_bruto_pct": float(margen_bruto),
+    "margen_contribucion_real_pct": float(margen_contribucion),
+    "breakeven_operativo_eur": float(breakeven_eur),
+    "breakeven_real_eur": float(breakeven_real),
+    "brecha_operativa_eur": float(brecha_mensual),
+    "dias_periodo": int(dias_periodo),
+    "breakeven_operativo_diario_eur": float(be_op_diario),
+    "breakeven_real_diario_eur": float(be_real_diario),
+    "brecha_operativa_diaria_eur": float(brecha_diaria_val),
+    "resultado_check_eur": float(resultado_check),
+    "fecha_calculo": datetime.now(),
+    "version_modelo": "OYKEN_BE_v1"
+}
+
+df_row = pd.DataFrame([row_resumen])
+
+# 4) Cargar histórico y hacer overwrite por (anio, mes)
+df_hist = pd.read_csv(BREAKEVEN_RESUMEN_FILE)
+
+df_hist = df_hist[
+    ~(
+        (df_hist["anio"] == int(anio_sel)) &
+        (df_hist["mes"] == int(mes_sel))
+    )
+]
+
+df_final = pd.concat([df_hist, df_row], ignore_index=True)
+df_final = df_final.sort_values(["anio", "mes"])
+
+# 5) Guardar
+df_final.to_csv(BREAKEVEN_RESUMEN_FILE, index=False)
+
+st.success("Breakeven resumen consolidado correctamente.")
