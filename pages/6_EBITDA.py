@@ -55,6 +55,31 @@ df_i["variacion_inventario_eur"] = pd.to_numeric(
 ).fillna(0)
 
 # =========================
+# SELECTORES
+# =========================
+anios_disponibles = sorted(
+    set(df_v["anio"].dropna())
+    | set(df_c["anio"].dropna())
+    | set(df_r["anio"].dropna())
+    | set(df_g["anio"].dropna())
+)
+
+c1, c2 = st.columns(2)
+
+with c1:
+    anio_sel = st.selectbox("Año", anios_disponibles, index=len(anios_disponibles) - 1)
+
+with c2:
+    mes_sel = st.selectbox(
+        "Mes",
+        options=[0] + list(range(1, 13)),
+        format_func=lambda x: "Todos los meses" if x == 0 else [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ][x - 1]
+    )
+
+# =========================
 # BREAKEVEN · LECTURA CANÓNICA
 # =========================
 
@@ -79,31 +104,6 @@ if df_be_sel.empty:
     st.stop()
 
 be = df_be_sel.iloc[0]
-
-# =========================
-# SELECTORES
-# =========================
-anios_disponibles = sorted(
-    set(df_v["anio"].dropna())
-    | set(df_c["anio"].dropna())
-    | set(df_r["anio"].dropna())
-    | set(df_g["anio"].dropna())
-)
-
-c1, c2 = st.columns(2)
-
-with c1:
-    anio_sel = st.selectbox("Año", anios_disponibles, index=len(anios_disponibles) - 1)
-
-with c2:
-    mes_sel = st.selectbox(
-        "Mes",
-        options=[0] + list(range(1, 13)),
-        format_func=lambda x: "Todos los meses" if x == 0 else [
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        ][x - 1]
-    )
 
 # =========================
 # FILTRADO
