@@ -310,4 +310,69 @@ with c2:
             help="Sin objetivo de EBITDA definido"
         )
 
+# =====================================================
+# LECTURA DEL OBJETIVO · REFERENCIAS ESTRUCTURALES
+# =====================================================
+
+st.divider()
+st.subheader("Lectura del objetivo según tu estructura actual")
+
+# Variables base
+be_real = float(be["breakeven_real_eur"])
+brecha = float(be["brecha_operativa_eur"])
+mc = float(be["margen_contribucion_real_pct"])
+
+# Escenarios
+ventas_sostenible = be_real
+
+ventas_eficiente_min = be_real + (brecha * 0.5)
+ventas_eficiente_max = be_real + (brecha * 0.7)
+
+ventas_exigente = be_real + brecha
+
+ebitda_eficiente_min = (ventas_eficiente_min - be_real) * mc
+ebitda_eficiente_max = (ventas_eficiente_max - be_real) * mc
+
+ebitda_exigente = brecha  # interpretación directa OYKEN
+
+# ---------- MENSAJE 1 · SOSTENIBLE ----------
+st.markdown(
+    f"""
+<small>
+<strong>🟢 Objetivo sostenible · Equilibrio real</strong><br>
+Ventas ≈ <strong>{ventas_sostenible:,.0f} €</strong><br>
+EBITDA esperado ≈ <strong>0 €</strong><br>
+Mantiene el negocio en equilibrio real, sin margen para absorber desviaciones.
+</small>
+""",
+    unsafe_allow_html=True
+)
+
+# ---------- MENSAJE 2 · EFICIENTE ----------
+st.markdown(
+    f"""
+<small>
+<strong>🟡 Objetivo eficiente · Zona óptima</strong><br>
+Ventas ≈ <strong>{ventas_eficiente_min:,.0f} €</strong> – <strong>{ventas_eficiente_max:,.0f} €</strong><br>
+EBITDA estimado ≈ <strong>{ebitda_eficiente_min:,.0f} €</strong> – <strong>{ebitda_eficiente_max:,.0f} €</strong><br>
+Absorbe parte de la brecha operativa y genera beneficio de forma estable.
+</small>
+""",
+    unsafe_allow_html=True
+)
+
+# ---------- MENSAJE 3 · EXIGENTE ----------
+st.markdown(
+    f"""
+<small>
+<strong>🔴 Objetivo exigente · Techo operativo</strong><br>
+Ventas ≥ <strong>{ventas_exigente:,.0f} €</strong><br>
+EBITDA potencial ≈ <strong>{ebitda_exigente:,.0f} €</strong><br>
+Requiere disciplina operativa total; cualquier desviación impacta directamente.
+</small>
+""",
+    unsafe_allow_html=True
+)
+
+
 
