@@ -284,10 +284,17 @@ absorcion = st.slider(
     "Nivel de absorción de brecha operativa",
     min_value=0,
     max_value=120,
-    value=50,
+    value=absorcion_real_pct,
     step=5,
     format="%d %%"
 )
+
+st.caption(
+    f"📍 Posición actual del negocio: "
+    f"absorción real ≈ {absorcion_real_pct} % "
+    f"(EBITDA real: {ebitda_real:,.0f} €)"
+)
+
 
 ratio = absorcion / 100
 
