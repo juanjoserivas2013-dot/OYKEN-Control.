@@ -412,6 +412,7 @@ st.divider()
 st.subheader("Lectura del objetivo según tu estructura actual")
 
 # Variables base
+ventas_odjetivo = budget_ventas
 be_real = float(be["breakeven_real_eur"])
 brecha = float(be["brecha_operativa_eur"])
 mc = float(be["margen_contribucion_real_pct"])
