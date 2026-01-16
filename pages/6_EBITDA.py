@@ -254,19 +254,6 @@ except Exception:
     st.error("No se pueden calcular las variables estructurales (Breakeven / Brecha).")
     st.stop()
 
-# =========================
-# POSICIÓN REAL DEL NEGOCIO (ABSORCIÓN DE BRECHA)
-# =========================
-
-if brecha > 0:
-    ratio_real = ebitda_real / brecha
-else:
-    ratio_real = 0
-
-absorcion_real_pct = round(ratio_real * 100)
-
-# Normalización para el slider (0 % – 120 %)
-absorcion_real_pct = max(min(absorcion_real_pct, 120), 0)
 
 # =====================================================
 # SIMULADOR DE ESCENARIO · ABSORCIÓN DE BRECHA
@@ -284,17 +271,10 @@ absorcion = st.slider(
     "Nivel de absorción de brecha operativa",
     min_value=0,
     max_value=120,
-    value=absorcion_real_pct,
+    value=50,
     step=5,
     format="%d %%"
 )
-
-st.caption(
-    f"📍 Posición actual del negocio: "
-    f"absorción real ≈ {absorcion_real_pct} % "
-    f"(EBITDA real: {ebitda_real:,.0f} €)"
-)
-
 
 ratio = absorcion / 100
 
@@ -410,5 +390,8 @@ Requiere disciplina operativa total; cualquier desviación impacta directamente.
 """,
     unsafe_allow_html=True
 )
+
+
+
 
 
