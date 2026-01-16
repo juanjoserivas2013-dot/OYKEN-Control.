@@ -254,8 +254,9 @@ except Exception:
     st.error("No se pueden calcular las variables estructurales (Breakeven / Brecha).")
     st.stop()
 
+
 # =====================================================
-# SIMULADOR DE ESCENARIO OPERATIVO (OYKEN)
+# SIMULADOR DE ESCENARIO · ABSORCIÓN DE BRECHA
 # =====================================================
 
 st.divider()
@@ -266,35 +267,22 @@ st.caption(
     "Las ventas y el EBITDA se calculan automáticamente según tu estructura."
 )
 
-# -------------------------
-# SLIDER · ABSORCIÓN BRECHA
-# -------------------------
-
 absorcion = st.slider(
     "Nivel de absorción de brecha operativa",
     min_value=0,
     max_value=120,
-    value=25,
+    value=50,
     step=5,
     format="%d %%"
 )
 
 ratio = absorcion / 100
 
-# -------------------------
-# ESCENARIO ESTRUCTURAL
-# -------------------------
+# Cálculos estructurales
+ventas_objetivo = be_real + (brecha * ratio)
+ebitda_esperado = brecha * ratio
 
-# Ventas del escenario (derivadas de la estructura)
-ventas_escenario = be_real + (brecha * ratio)
-
-# EBITDA esperado del escenario
-ebitda_escenario = brecha * ratio
-
-# -------------------------
-# CLASIFICACIÓN DE ZONA
-# -------------------------
-
+# Clasificación de zona
 if ratio < 0.5:
     zona = "🟢 Sostenible"
     riesgo = "Bajo"
@@ -314,7 +302,7 @@ elif ratio <= 1:
     riesgo = "Alto"
     mensaje = (
         "Se absorbe prácticamente toda la brecha operativa. "
-        "Requiere disciplina operativa total."
+        "Requiere disciplina total y control diario."
     )
 else:
     zona = "⚠️ Forzado"
@@ -324,71 +312,20 @@ else:
         "Riesgo elevado de ruptura operativa."
     )
 
-# -------------------------
-# VISUAL PRINCIPAL
-# -------------------------
-
+# Visual
 c1, c2, c3 = st.columns(3)
 
 with c1:
-    st.metric("Ventas objetivo", f"{ventas_escenario:,.0f} €")
+    st.metric("Ventas objetivo", f"{ventas_objetivo:,.0f} €")
 
 with c2:
-    st.metric("EBITDA esperado", f"{ebitda_escenario:,.0f} €")
+    st.metric("EBITDA esperado", f"{ebitda_esperado:,.0f} €")
 
 with c3:
     st.metric("Zona operativa", zona)
 
 st.caption(f"Riesgo estructural: **{riesgo}**")
 st.info(mensaje)
-
-# =====================================================
-# COMPARATIVA · ESCENARIO vs REALIDAD
-# =====================================================
-
-st.divider()
-st.subheader("Comparativa con la realidad actual")
-
-delta_ventas = ventas_real - ventas_escenario
-delta_ebitda = ebitda_real - ebitda_escenario
-
-c1, c2 = st.columns(2)
-
-with c1:
-    st.metric(
-        "Ventas reales",
-        f"{ventas_real:,.0f} €",
-        delta=f"{delta_ventas:+,.0f} €",
-        help="Ventas reales frente a las ventas derivadas del escenario estructural"
-    )
-
-with c2:
-    st.metric(
-        "EBITDA real",
-        f"{ebitda_real:,.0f} €",
-        delta=f"{delta_ebitda:+,.0f} €",
-        help="EBITDA real frente al EBITDA esperado según la estructura"
-    )
-
-# -------------------------
-# LECTURA AUTOMÁTICA
-# -------------------------
-
-if ventas_real >= ventas_escenario and ebitda_real < ebitda_escenario:
-    st.warning(
-        "Se están alcanzando (o superando) las ventas del escenario, "
-        "pero el EBITDA real es inferior al esperado. "
-        "Esto indica pérdida de calidad económica: mix de ventas, costes o eficiencia operativa."
-    )
-elif ventas_real < ventas_escenario:
-    st.info(
-        "El nivel actual de ventas no alcanza el escenario estructural planteado. "
-        "El foco debe estar en volumen o frecuencia."
-    )
-else:
-    st.success(
-        "Las ventas y el EBITDA están alineados con el escenario estructural."
-    )
 
 # =====================================================
 # LECTURA DEL OBJETIVO · REFERENCIAS ESTRUCTURALES
@@ -453,6 +390,8 @@ Requiere disciplina operativa total; cualquier desviación impacta directamente.
 """,
     unsafe_allow_html=True
 )
+
+
 
 
 
