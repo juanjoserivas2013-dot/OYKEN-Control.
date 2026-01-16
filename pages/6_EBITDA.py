@@ -334,26 +334,26 @@ st.info(mensaje)
 st.divider()
 st.subheader("Comparativa con la realidad actual")
 
-# Diferencias
-delta_ventas = ventas_real - ventas_objetivo
-delta_ebitda = ebitda_real - ebitda_esperado
+# Diferencias reales vs escenario
+delta_ventas = ventas_real - ventas_slider
+delta_ebitda = ebitda_real - ebitda_slider
 
 c1, c2 = st.columns(2)
 
 with c1:
     st.metric(
-        "Ventas",
+        "Ventas reales",
         f"{ventas_real:,.0f} €",
         delta=f"{delta_ventas:+,.0f} €",
-        help="Comparación entre ventas reales y ventas objetivo del escenario"
+        help="Diferencia frente a las ventas objetivo del escenario estructural"
     )
 
 with c2:
     st.metric(
-        "EBITDA",
+        "EBITDA real",
         f"{ebitda_real:,.0f} €",
         delta=f"{delta_ebitda:+,.0f} €",
-        help="Comparación entre EBITDA real y EBITDA esperado según estructura"
+        help="Diferencia frente al EBITDA esperado según la estructura"
     )
 
 
