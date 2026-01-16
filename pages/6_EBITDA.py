@@ -311,129 +311,44 @@ with c2:
         )
 
 # =====================================================
-# EBITDA ESPERADO SEGÚN OBJETIVO DE VENTAS (OYKEN)
+# LECTURA DEL OBJETIVO · REFERENCIAS ESTRUCTURALES
 # =====================================================
 
 st.divider()
-st.markdown("### Lectura económica del objetivo")
+st.subheader("Lectura del objetivo según tu estructura actual")
 
-# Variables estructurales canónicas
-breakeven_real = float(be["breakeven_real_eur"])
-margen_contribucion = float(be["margen_contribucion_real_pct"])
+# Variables base
+be_real = float(be["breakeven_real_eur"])
+brecha = float(be["brecha_operativa_eur"])
+mc = float(be["margen_contribucion_real_pct"])
 
-if budget_ventas > 0:
-    ebitda_esperado = max(
-        0,
-        (budget_ventas - breakeven_real) * margen_contribucion
-    )
+# Escenarios
+ventas_sostenible = be_real
 
-    delta_vs_objetivo = (
-        ebitda_esperado - budget_ebitda
-        if budget_ebitda > 0
-        else None
-    )
+ventas_eficiente_min = be_real + (brecha * 0.5)
+ventas_eficiente_max = be_real + (brecha * 0.7)
 
-    c1, c2 = st.columns(2)
+ventas_exigente = be_real + brecha
 
-    with c1:
-        st.metric(
-            "EBITDA esperado según tu estructura",
-            f"{ebitda_esperado:,.2f} €",
-            help=(
-                "EBITDA que generaría el negocio si alcanza las ventas objetivo "
-                "con la estructura y margen de contribución actuales."
-            )
-        )
+ebitda_eficiente_min = (ventas_eficiente_min - be_real) * mc
+ebitda_eficiente_max = (ventas_eficiente_max - be_real) * mc
 
-    with c2:
-        if budget_ebitda > 0:
-            st.metric(
-                "Desviación vs EBITDA objetivo",
-                f"{delta_vs_objetivo:,.2f} €"
-            )
-        else:
-            st.metric(
-                "Desviación vs EBITDA objetivo",
-                "—",
-                help="No se ha definido un objetivo de EBITDA"
-            )
-else:
-    st.info(
-        "Define un objetivo de ventas para estimar el EBITDA esperado "
-        "según tu estructura actual."
-    )
+ebitda_exigente = brecha  # interpretación directa OYKEN
 
-# =====================================================
-# MÉTRICA OYKEN · ABSORCIÓN DE BRECHA OPERATIVA
-# =====================================================
-
-st.divider()
-st.markdown("### Coherencia del objetivo")
-
-# Variables estructurales CANÓNICAS (desde Breakeven)
-breakeven_real = float(be["breakeven_real_eur"])
-brecha_operativa = float(be["brecha_operativa_eur"])
-margen_contribucion = float(be["margen_contribucion_real_pct"])
-
-# Objetivo introducido
-ventas_objetivo = budget_ventas
-
-# -----------------------------
-# Cálculo absorción de brecha
-# -----------------------------
-if brecha_operativa > 0 and ventas_objetivo > breakeven_real:
-    absorcion_pct = ((ventas_objetivo - breakeven_real) / brecha_operativa) * 100
-else:
-    absorcion_pct = 0
-
-# -----------------------------
-# Visualización
-# -----------------------------
-st.metric(
-    "Absorción de brecha operativa",
-    f"{absorcion_pct:.0f} %",
-    help=(
-        "Indica qué porcentaje de la brecha operativa estructural "
-        "está intentando absorber el objetivo mediante mayores ventas."
-    )
-)
-
-# -----------------------------
-# Lectura OYKEN (no autoritaria)
-# -----------------------------
-if absorcion_pct < 30:
-    st.caption(
-        "🟢 Objetivo de perfil sostenible. "
-        "Prioriza estabilidad frente a optimización."
-    )
-elif absorcion_pct < 80:
-    st.caption(
-        "🟡 Objetivo de perfil eficiente. "
-        "Exige mejora operativa sin forzar el modelo."
-    )
-else:
-    st.caption(
-        "🔴 Objetivo de perfil exigente. "
-        "Requiere disciplina operativa y control total."
-    )
-
-
-# -------------------------
-# MENSAJES OYKEN
-# -------------------------
-
+# ---------- MENSAJE 1 · SOSTENIBLE ----------
 st.markdown(
     f"""
 <small>
 <strong>🟢 Objetivo sostenible · Equilibrio real</strong><br>
 Ventas ≈ <strong>{ventas_sostenible:,.0f} €</strong><br>
-EBITDA esperado ≈ <strong>{ebitda_sostenible:,.0f} €</strong><br>
+EBITDA esperado ≈ <strong>0 €</strong><br>
 Mantiene el negocio en equilibrio real, sin margen para absorber desviaciones.
 </small>
 """,
     unsafe_allow_html=True
 )
 
+# ---------- MENSAJE 2 · EFICIENTE ----------
 st.markdown(
     f"""
 <small>
@@ -446,6 +361,7 @@ Absorbe parte de la brecha operativa y genera beneficio de forma estable.
     unsafe_allow_html=True
 )
 
+# ---------- MENSAJE 3 · EXIGENTE ----------
 st.markdown(
     f"""
 <small>
@@ -457,3 +373,5 @@ Requiere disciplina operativa total; cualquier desviación impacta directamente.
 """,
     unsafe_allow_html=True
 )
+
+
