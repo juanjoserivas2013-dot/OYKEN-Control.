@@ -311,6 +311,45 @@ with c2:
         )
 
 # =====================================================
+# EBITDA ESPERADO SEGÚN OBJETIVO DE VENTAS (OYKEN)
+# =====================================================
+
+st.divider()
+st.markdown("### Lectura económica del objetivo")
+
+if budget_ventas > 0:
+    ebitda_esperado = max(
+        0,
+        (budget_ventas - be_real) * mc
+    )
+
+    delta_vs_objetivo = ebitda_esperado - budget_ebitda if budget_ebitda > 0 else None
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.metric(
+            "EBITDA esperado según tu estructura",
+            f"{ebitda_esperado:,.2f} €",
+            help=(
+                "EBITDA que generaría el negocio si alcanza las ventas objetivo "
+                "con la estructura y margen actuales."
+            )
+        )
+
+    with c2:
+        if budget_ebitda > 0:
+            st.metric(
+                "Desviación vs EBITDA objetivo",
+                f"{delta_vs_objetivo:,.2f} €",
+                help="Diferencia entre el EBITDA esperado y el objetivo marcado."
+            )
+        else:
+            st.caption("No se ha definido EBITDA objetivo.")
+else:
+    st.info("Define un objetivo de ventas para estimar el EBITDA esperado.")
+
+# =====================================================
 # MÉTRICA OYKEN · ABSORCIÓN DE BRECHA OPERATIVA
 # =====================================================
 
