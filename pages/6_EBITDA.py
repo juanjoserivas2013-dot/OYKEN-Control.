@@ -242,6 +242,19 @@ with c2:
         f"{be['margen_contribucion_real_pct']:.2%}"
     )
 
+# =========================
+# VARIABLES CANÓNICAS GARANTIZADAS
+# =========================
+
+try:
+    be_real = float(be["breakeven_real_eur"])
+    brecha = float(be["brecha_operativa_eur"])
+    mc = float(be["margen_contribucion_real_pct"])
+except Exception:
+    st.error("No se pueden calcular las variables estructurales (Breakeven / Brecha).")
+    st.stop()
+
+
 # =====================================================
 # SIMULADOR DE ESCENARIO · ABSORCIÓN DE BRECHA
 # =====================================================
