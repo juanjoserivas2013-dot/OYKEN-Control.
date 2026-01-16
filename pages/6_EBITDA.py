@@ -413,23 +413,21 @@ else:
         )
 
 # =====================================================
-# LECTURA ECONÓMICA DEL OBJETIVO · OYKEN
+# MÉTRICA OYKEN · ABSORCIÓN DE BRECHA OPERATIVA
 # =====================================================
 
 st.divider()
-st.subheader("Lectura económica del objetivo")
+st.markdown("### Coherencia del objetivo")
 
 # -------------------------
 # VARIABLES CANÓNICAS
 # -------------------------
 
-# Input del usuario (UI)
 ventas_objetivo = float(budget_ventas)
 
-# Datos estructurales desde Breakeven
-be_real = float(be["breakeven_real_eur"])
-brecha = float(be["brecha_operativa_eur"])
-mc = float(be["margen_contribucion_real_pct"])
+breakeven_real = float(be["breakeven_real_eur"])
+brecha_operativa = float(be["brecha_operativa_eur"])
+margen_contribucion = float(be["margen_contribucion_real_pct"])
 
 # -------------------------
 # VALIDACIONES BÁSICAS
@@ -437,45 +435,81 @@ mc = float(be["margen_contribucion_real_pct"])
 
 if ventas_objetivo <= 0:
     st.info(
-        "Introduce un objetivo de ventas para obtener la lectura económica "
-        "según tu estructura actual."
+        "Define un objetivo de ventas para analizar la coherencia "
+        "del objetivo con la estructura actual."
     )
     st.stop()
 
-if mc <= 0:
+if margen_contribucion <= 0:
     st.warning(
-        "El margen de contribución es ≤ 0. "
-        "No se puede estimar EBITDA con la estructura actual."
+        "El margen de contribución real es ≤ 0. "
+        "No es posible interpretar el objetivo con la estructura actual."
     )
     st.stop()
 
 # -------------------------
-# EBITDA ESTIMADO SEGÚN OBJETIVO
+# ABSORCIÓN DE BRECHA
 # -------------------------
 
-ebitda_estimado = (ventas_objetivo - be_real) * mc
+if brecha_operativa > 0:
+    absorcion_brecha_pct = (
+        (ventas_objetivo - breakeven_real) / brecha_operativa
+    ) * 100
+else:
+    absorcion_brecha_pct = 0
 
-# No permitimos EBITDA negativo en lectura
-ebitda_estimado = max(0, ebitda_estimado)
+absorcion_brecha_pct = max(0, absorcion_brecha_pct)
+
+st.metric(
+    "Absorción de brecha operativa",
+    f"{absorcion_brecha_pct:,.0f} %",
+    help=(
+        "Indica qué parte de la ineficiencia estructural del negocio "
+        "está intentando compensar el objetivo mediante mayores ventas."
+    )
+)
+
+# -------------------------
+# EBITDA ESPERADO SEGÚN OBJETIVO
+# -------------------------
+
+ebitda_esperado = (ventas_objetivo - breakeven_real) * margen_contribucion
+ebitda_esperado = max(0, ebitda_esperado)
+
+st.metric(
+    "EBITDA esperado según tu estructura",
+    f"{ebitda_esperado:,.2f} €",
+    help=(
+        "EBITDA que generaría el negocio si alcanza las ventas objetivo "
+        "manteniendo la estructura y el margen actuales."
+    )
+)
+
+# =====================================================
+# LECTURA DEL OBJETIVO · REFERENCIAS ESTRUCTURALES
+# =====================================================
+
+st.divider()
+st.subheader("Lectura del objetivo según tu estructura actual")
 
 # -------------------------
 # ESCENARIOS OYKEN
 # -------------------------
 
-# 1️⃣ Sostenible
-ventas_sostenible = be_real
+# 🟢 Escenario sostenible
+ventas_sostenible = breakeven_real
 ebitda_sostenible = 0.0
 
-# 2️⃣ Eficiente (absorbe 50–70 % de la brecha)
-ventas_eficiente_min = be_real + (brecha * 0.5)
-ventas_eficiente_max = be_real + (brecha * 0.7)
+# 🟡 Escenario eficiente (absorbe 50–70 % de brecha)
+ventas_eficiente_min = breakeven_real + (brecha_operativa * 0.5)
+ventas_eficiente_max = breakeven_real + (brecha_operativa * 0.7)
 
-ebitda_eficiente_min = (ventas_eficiente_min - be_real) * mc
-ebitda_eficiente_max = (ventas_eficiente_max - be_real) * mc
+ebitda_eficiente_min = (ventas_eficiente_min - breakeven_real) * margen_contribucion
+ebitda_eficiente_max = (ventas_eficiente_max - breakeven_real) * margen_contribucion
 
-# 3️⃣ Exigente (absorbe 100 % de la brecha)
-ventas_exigente = be_real + brecha
-ebitda_exigente = brecha * mc
+# 🔴 Escenario exigente (absorbe 100 % brecha)
+ventas_exigente = breakeven_real + brecha_operativa
+ebitda_exigente = brecha_operativa * margen_contribucion
 
 # -------------------------
 # MENSAJES OYKEN
@@ -516,5 +550,3 @@ Requiere disciplina operativa total; cualquier desviación impacta directamente.
 """,
     unsafe_allow_html=True
 )
-
-
